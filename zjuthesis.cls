@@ -111,3 +111,5 @@
 \input{config/commands}
 \input{config/format/format}
 \input{body/notations}
+\input{body/commands.tex}
+\input{body/packages.tex}
