@@ -1,4 +1,4 @@
-compile: 
+compile: clean
     latexmk -xelatex -f -outdir=out zjuthesis
 
 clean:
