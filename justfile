@@ -4,5 +4,5 @@ compile: clean
 clean:
     latexmk -C
 
-count: compile
-    bash script/utils/word_count.sh
+count:
+    bash script/utils/word_diff.sh
