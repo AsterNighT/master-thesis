@@ -254,3 +254,75 @@
   title  = {Amazon EBS General Purpose Volumes},
   url    = {https://aws.amazon.com/ebs/general-purpose/}
 }
+
+@inproceedings{DPF-PIR,
+  author    = {Niv Gilboa and
+               Yuval Ishai},
+  title     = {Distributed Point Functions and Their Applications},
+  pages     = {640--658},
+  editor    = eurocrypt14ed,
+  booktitle = eurocrypt14name,
+  volume    = eurocrypt14vol,
+  address   = eurocrypt14addr,
+  month     = eurocrypt14month,
+  publisher = eurocryptpub,
+  series    = mylncs,
+  year      = 2014,
+  doi       = {10.1007/978-3-642-55220-5_35}
+}
+
+@article{chen2012efficient,
+  title     = {Efficient fair conditional payments for outsourcing computations},
+  author    = {Chen, Xiaofeng and Li, Jin and Susilo, Willy},
+  journal   = {IEEE Transactions on Information Forensics and Security},
+  volume    = {7},
+  number    = {6},
+  pages     = {1687--1694},
+  year      = {2012},
+  publisher = {IEEE}
+}
+
+@article{carbunar2011payments,
+  title     = {Payments for outsourced computations},
+  author    = {Carbunar, Bogdan and Tripunitara, Mahesh V},
+  journal   = {IEEE Transactions on Parallel and Distributed Systems},
+  volume    = {23},
+  number    = {2},
+  pages     = {313--320},
+  year      = {2011},
+  publisher = {IEEE}
+}
+
+@inproceedings{RAID-PIR,
+  author    = {Demmler, Daniel and Herzberg, Amir and Schneider, Thomas},
+  title     = {RAID-PIR: Practical Multi-Server PIR},
+  year      = {2014},
+  isbn      = {9781450332392},
+  publisher = {Association for Computing Machinery},
+  address   = {New York, NY, USA},
+  url       = {https://doi.org/10.1145/2664168.2664181},
+  doi       = {10.1145/2664168.2664181},
+  abstract  = {Private Information Retrieval (PIR) allows to privately request a block of data from a database such that no information about the queried block is revealed to the database owner. With the rapid rise of cloud computing, data is often shared across multiple servers, making multi-server PIR a promising privacy-enhancing technology.In this paper, we introduce RAID-PIR, an efficient and simple multi-server PIR scheme, which has similar approach to RAID (Redundant Arrays of Inexpensive Disks) systems. Each server stores only a part of the database, its computational complexity depends only on this part, and multiple blocks can be queried efficiently in parallel. RAID-PIR improves efficiency over known PIR protocols, using only very efficient cryptographic primitives (pseudo-random generator). We demonstrate that RAID-PIR is practical and well-suited for cloud deployment as it reduces the communication as well as the computational workload per server.},
+  booktitle = {Proceedings of the 6th Edition of the ACM Workshop on Cloud Computing Security},
+  pages     = {45–56},
+  numpages  = {12},
+  keywords  = {applied cryptography, cloud security, privacy enhancing technologies, private information retrieval, raid, redundant array of inexpensive disks, secure storage},
+  location  = {Scottsdale, Arizona, USA},
+  series    = {CCSW '14}
+}
+
+@inproceedings{10.1007/978-3-031-22368-6_3,
+  author    = {Eriguchi, Reo and Kurosawa, Kaoru and Nuida, Koji},
+  title     = {On the Optimal Communication Complexity of Error-Correcting Multi-server PIR},
+  year      = {2022},
+  isbn      = {978-3-031-22367-9},
+  publisher = {Springer-Verlag},
+  address   = {Berlin, Heidelberg},
+  url       = {https://doi.org/10.1007/978-3-031-22368-6_3},
+  doi       = {10.1007/978-3-031-22368-6_3},
+  abstract  = {An ℓ-server Private Information Retrieval (PIR) scheme enables a client to retrieve a data item from a database replicated among ℓ servers while hiding the identity of the item. It is called b-error-correcting if a client can correctly compute the data item even in the presence of b malicious servers. It is known that b-error correction is possible if and only if ℓ>2b. In this paper, we first prove that if error correction is perfect, i.e., the client always corrects errors, the minimum communication cost of b-error-correcting ℓ-server PIR is asymptotically equal to that of regular (ℓ-2b)-server PIR as a function of the database size n. Secondly, we formalize a relaxed notion of statistical b-error-correcting PIR, which allows non-zero failure probability. We show that as a function of n, the minimum communication cost of statistical b-error-correcting ℓ-server PIR is asymptotically equal to that of regular (ℓ-b)-server one, which is at most that of (ℓ-2b)-server one. Our main technical contribution is a generic construction of statistical b-error-correcting ℓ-server PIR for any ℓ>2b from regular (ℓ-b)-server PIR. We can therefore reduce the problem of determining the optimal communication complexity of error-correcting PIR to determining that of regular PIR. In particular, our construction instantiated with the state-of-the-art PIR schemes and the previous lower bound for single-server PIR result in a separation in terms of communication cost between perfect and statistical error correction for any ℓ>2b.},
+  booktitle = {Theory of Cryptography: 20th International Conference, TCC 2022, Chicago, IL, USA, November 7–10, 2022, Proceedings, Part III},
+  pages     = {60–88},
+  numpages  = {29},
+  location  = {Chicago, IL, USA}
+}

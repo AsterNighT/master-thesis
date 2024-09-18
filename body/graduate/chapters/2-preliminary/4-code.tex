@@ -1,3 +1,28 @@
 \section{纠错码}
-
 \todo{纠错码，纠删码，是否了解错误位置导致的差别，典型的纠错码如RS code}
+纠错码（Error correction code）是一类用于在消息传输中检测错误的前向纠错码（Forward error correction, FEC）。在传输过程中，消息可能会受到干扰，导致接收方接收到的消息与发送方发送的消息不一致。纠错码通过在消息中添加冗余信息，使得接收方可以检测并纠正错误。一个典型的例子是汉明码（Hamming code）。我们首先给出一个简化版的纠错码定义：
+
+\begin{definition}[纠错码]
+    记$w(x)$为向量$x$的汉明重量，$(n,m,e)$编码方案$\Pi$允许将消息从$\mathbb{F}^n$编码至$\mathbb{F}^m$，并且进行反向解码。其由算法元组$\Pi = (Encode, Decode)$组成：
+    \begin{itemize}
+        \item $Encode(x) \rightarrow c$。给定消息向量$x\in \mathbb{F}^n$，生成编码向量$c\in \mathbb{F}^m$。
+        \item $Decode(c) \rightarrow \{x,\bot\}$。给定编码向量$c\in \mathbb{F}^m$，生成消息向量$x\in \mathbb{F}^n$或是解码失败。 
+    \end{itemize}
+    如果对于任意消息向量$x\in \mathbb{F}^n$，对于任意错误向量$\Delta\in \mathbb{F}^m, w(\Delta)\le e$，进行编码$c = Encode(x)$后，有$Decode(c+e) = x$。那么称$\Pi$是一个$(n,m,e)$纠错码。
+\end{definition}
+
+不难注意到，由基本的信息论要求，总是有$n\le m$。在此基础上，当$n,e$确定时，不同的编码方案需要不同大小的$m$，同时在编码的时间效率上也各有优劣。我们称$n/m$为编码的利用率。$n,e$一定时，利用率越高，编码占用的空间越小，在传输与存储上效率就越高。在此基础上，有一类编码方案称为纠删码（Erasure code）。纠删码是一种特殊的纠错码，其编码利用率高于一般的纠错码，但是在解码时，要求知道错误的位置。换言之，纠删码可以接受数据丢失，但不能接受数据错误。我们给出纠删码的定义：
+
+\begin{definition}[纠删码]
+    记$w(x)$为向量$x$的汉明重量，$(n,m,e)$编码方案$\Pi$允许将消息从$\mathbb{F}^n$编码至$\mathbb{F}^m$，并且进行反向解码。其由算法元组$\Pi = (Encode, Decode)$组成：
+    \begin{itemize}
+        \item $Encode(x) \rightarrow c$。给定消息向量$x\in \mathbb{F}^n$，生成编码向量$c\in \mathbb{F}^m$。
+        \item $Decode(c, \delta) \rightarrow \{x,\bot\}$。给定编码向量$c\in \mathbb{F}^m$与错误位置向量$\delta\in \{0,1\}^m$，生成消息向量$x\in \mathbb{F}^n$或是解码失败。
+    \end{itemize}
+    如果对于任意消息向量$x\in \mathbb{F}^n$，对于任意错误向量与错误位置向量$\Delta\in \mathbb{F}^m, \delta\in \{0,1\}^m, w(\Delta)=w(\delta)\le e$，且满足 $\Delta$ 与 $\delta$ 非零位置一致。进行编码$c = Encode(x)$后，有$Decode(c, \delta) = x$。那么称$\Pi$是一个$(n,m,e)$纠删码。
+\end{definition}
+
+容易看出，纠删码在功能性上弱于纠错码。纠删码在利用率上可以达到信息论的理论上界：即$(n,m,e)$中$m=n+e$。此时，任取编码后向量中的$n$个位置，都可以恢复编码前的消息。这被称为“最优纠删码”。
+
+\paragraph{Reed-Solomon编码}
+Reed-Solomon编码是一种主流的纠删码实现。它是一种最优纠删码，即它可以达到$m=n+e$。本文使用Reed-Solomon编码作为主要的纠删码实现。Reed-Solomon编码的基本原理是多项式插值与求值，本文与如何构造一种纠删码及纠删码的底层原理无关，因此不再详细讨论。

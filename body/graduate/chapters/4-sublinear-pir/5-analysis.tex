@@ -2,5 +2,20 @@
 
 \subsection{安全分析}
 \todo{这里可以写好几页，也可以写一句话，看情况}
+在本节中，我们聚焦于图 \ref{fig:two-server-verify} 中描述的双服务器方案，并尝试对协议的安全性证明提供直观的解释。总体而言，单服务器协议与双服务器方案类似，但只包含了Query服务器。详细安全性证明在附录 \ref{appendix:security} 中提供。
+
+\paragraph{正确性}
+仅当客户端无法找到包含查询索引的集合时，它才无法获得查询的记录。由于客户端保有$\hintcount = \magictotal$个Hint，这种情况发生的概率可忽略不计。来自服务器的诚实答案始终会被接受，所以正确性的缺陷是可忽略的。
+
+\paragraph{完整性}
+设 $\blockidx = \lfloor \dbidx / \sqrt{\dbsize} \rfloor$ 为包含查询索引的块，$r = Eval(\randomset, \blockidx)$ 是从查询中移除的随机元素。在$Reconstruct$算法中，客户端检查是否有$\randomhint-\randomanswer = r \cdot (\sumhint-\sumanswer)$。恶意查询服务器提供的错误答案可以表示为偏移量$(\sumanswer+\Delta^+, \randomanswer+\Delta^\times)$，其中$(\Delta^+, \Delta^\times) \neq (0, 0)$。该检查可以化简为 $r\Delta^+ - \Delta^\times = 0$。在不知道$r$的情况下，此式为真的概率为$2^{-\recordsize}$。
+
+\paragraph{隐私性}
+在离线阶段，生成的的Hint和集合与任何特定索引无关。在线阶段，客户端向任何服务器的每个查询都是$[\sqrt{\dbsize}]$上的$\sqrt{\dbsize}$个随机数加上$\recordfield$中的$\sqrt{\dbsize}$个随机元素，与查询的索引也没有关系。
+
+本文的方案能够抵抗选择失败攻击。不难发现，验证结果不会向Query服务器提供任何信息。如果服务器如实作答，根据正确性，客户端通过验证并接受答案。如果服务器的答案是错误的，根据完整性分析，客户端只有$2^{-\recordsize}$的概率接受这一答案。因此，敌手的优势不超过$2^{-\recordsize}$。由于 $\recordsize \ge \lambda$，这是一个关于$\lambda$的可忽略函数。
 
 \subsection{性能分析}
+在离线阶段，客户端向Hint服务器发送一个大小为$O_\lambda(1)$的PRF密钥。Hint服务器将该密钥扩展为$\hintcount$个Hint密钥，并计算这些Hint。随后，服务器向客户端发送$\hintcount$个校验值和$\sqrt{\dbsize}$个Crumb。校验值的大小为$2\recordsize\hintcount$。$\sqrt{\dbsize}$个面包屑的大小为$\recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$。因此，离线通信的总量为$2\recordsize\hintcount + \recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$，离线计算的开销为$O_\lambda(\hintcount) + O(\recordsize\sqrt{\dbsize}\hintcount)$。
+
+在在线阶段，客户端搜索包含查询索引$\dbidx$的Hint，预期计算开销为$O_\lambda(\sqrt{\dbsize})$。随后的Hint处理，包括展开集合、用Crumb替换索引以及生成新集合，也需要$O_\lambda(\sqrt{\dbsize})$的计算量。客户端向Query服务器发送的查询大小为$\recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$，向Hint服务器发送的查询大小为$O(\sqrt{\dbsize})$。每个服务器在$O(\recordsize\sqrt{\dbsize})$时间内计算校验值。Hint服务器回复$\sqrt{\dbsize}$条记录，Query服务器回复2个校验值。然后，客户端在$O(\recordsize\sqrt{\dbsize})$时间内验证答案并刷新Hint。
