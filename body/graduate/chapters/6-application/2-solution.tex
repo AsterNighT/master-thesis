@@ -1,7 +1,240 @@
 \section{解决方案}
-
+针对黑名单匹配这一问题，本文提出了一套使用区块链节点委托计算的解决方案。在这一方案中，服务提供商使用本文提出于第\ref{sec:optimized-model}节中提出的优化多服务器模型提供服务。具体算法部分，双方采用Reed-solomon编码分片的，基于图\ref{fig:single-server}中算法的PIR协议。
 \subsection{协议流程}
-\todo{把方案具体套到某个场景上去，电话号码黑名单查询就挺不错的}
+如图\ref{fig:blockchain-scheme}所示：
+\begin{figure}
+    \begin{mdframed}
+        \centering
+        \textbf{基于区块链的PIR协议}
+
+        \raggedright
+        初始化阶段：
+        \begin{itemize}
+            \item 服务提供商选择将数据库摘要公开，节点向服务提供商请求参与协议。服务提供商根据数据库大小和容灾需要选择合适的纠删码方案，并将数据库分片分发至节点。
+            \item 服务提供商选择离散对数困难的群生成元$g$。
+        \end{itemize}
+        离线阶段：
+        \begin{itemize}
+            \item 客户端与服务提供商运行离线阶段PIR协议，获得所需的Hint与Crumb。
+        \end{itemize}
+        在线阶段：
+        \begin{itemize}
+            \item 客户端在区块链发起交易。
+            \item 节点发现交易并开始计算PIR查询，将答案上传至区块链。
+            \item 客户端验证答案的正确性。如果能够从有效的数据中恢复出正确的结果，则客户端接受答案。
+        \end{itemize}
+    \end{mdframed}
+    \caption{基于区块链的PIR协议}
+    \label{fig:blockchain-scheme}
+\end{figure}
+
+不难注意到，算法流程的核心是保障以下几点：
+\begin{enumerate}
+    \item 当且仅当节点给出的答案是正确的，客户端通过验证。
+    \item 当且仅当通过验证的节点数量超过恢复阈值，客户端接受答案。
+    \item 如果节点没有及时给出回复，应判断节点给出了不通过验证的答案。如果客户端没有及时给出回复，应认为客户端放弃了查询。
+\end{enumerate}
+
+这些要求都可以由智能合约实现。我们使用solidity语言编写了相应的逻辑，其核心在于，验证答案这一过程是可以公开进行的。具体地：
+\begin{enumerate}
+    \item 记图\ref{fig:single-server}算法中$Eval(\randomset_\hintidx, \blockidx)$的值为$e$，客户端将$e$Commit至交易中。同时，客户端也将$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}$的值上传至合约内。
+    \item 节点提交$\sumanswer,\randomanswer$
+    \item 确定答案后，客户端公开$e$的值，并验证是否有$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}=g^{\randomanswer-e\sumanswer}$
+\end{enumerate}
+
+这一过程的正确性是显然的。具体地算法代码如下：
+\begin{lstlisting}[language=Solidity]
+    // SPDX-License-Identifier: MIT
+    pragma solidity ^0.8.0;
+    
+    contract CommitmentService {
+        // 状态变量
+        address public client;                 // 客户的地址
+        uint256 public n;                      // 提交的数字和服务提供者的数量
+        uint256 public t;                      // 允许失败的最大数量
+        uint256 public commitEndTime;          // 提交阶段结束的时间
+        uint256 public revealEndTime;          // 客户公开已提交元组的截止时间
+        uint256 public lockedAmount;           // 客户锁定的资金
+        bool public revealed;                  // 客户是否公开了已提交的元组
+    
+        uint256 public g;                      // 群的生成元
+        uint256 public e;                      // 客户公开的e值
+    
+        // 承诺的元组：每个元组包含一个群元素h和一个承诺commit c
+        struct Tuple {
+            uint256 h;      // 群上的元素h
+            bytes32 c;      // 承诺的commit（哈希值）
+        }
+    
+        Tuple[] public tuples;                 // 客户承诺的n个元组
+        address[] public servers;              // n个服务提供者的地址
+    
+        // 提交的ai, bi
+        struct Submission {
+            uint256 ai;
+            uint256 bi;
+            bool submitted;
+        }
+    
+        mapping(address => Submission) public submissions; // 每个服务提供者提交的ai, bi
+        uint256 public submissionCount;                    // 已提交的服务提供者数量
+    
+        // 事件
+        event Commit(address indexed client, address[] servers, uint256 amountLocked);
+        event Submit(address indexed server, uint256 ai, uint256 bi);
+        event Reveal(address indexed client, uint256 e);
+        event DistributeFunds(uint256 successCount, uint256 amountPerWinner);
+        event RefundClient(uint256 amount);
+        event TimeoutDistribute(uint256 amountPerServer);
+        event RevealFailed(address indexed client, string message);
+    
+        // 修饰符
+        modifier onlyClient() {
+            require(msg.sender == client, unicode"不是客户");
+            _;
+        }
+    
+        modifier onlyDuringCommitPhase() {
+            require(block.timestamp <= commitEndTime, unicode"提交阶段已结束");
+            _;
+        }
+    
+        modifier onlyDuringRevealPhase() {
+            require(block.timestamp > commitEndTime && block.timestamp <= revealEndTime, unicode"不在公开阶段");
+            _;
+        }
+    
+        modifier afterRevealPhase() {
+            require(block.timestamp > revealEndTime, unicode"公开阶段尚未结束");
+            _;
+        }
+    
+        constructor(
+            uint256 _n,
+            uint256 _t,
+            uint256 _commitDuration,
+            uint256 _revealDuration,
+            uint256 _g,                 // 群的生成元g
+            Tuple[] memory _tuples,     // Memory数组，含n个元组
+            address[] memory _servers
+        ) payable {
+            require(_n == _tuples.length && _n == _servers.length, unicode"元组或服务提供者数量无效");
+            require(msg.value > 0, unicode"必须锁定一些资金");
+    
+            client = msg.sender;
+            n = _n;
+            t = _t;
+            g = _g;  // 设置群的生成元g
+            commitEndTime = block.timestamp + _commitDuration;
+            revealEndTime = commitEndTime + _revealDuration;
+            
+            // 将memory中的_tuples逐个复制到storage中的tuples
+            for (uint256 i = 0; i < _tuples.length; i++) {
+                tuples.push(Tuple({
+                    h: _tuples[i].h,
+                    c: _tuples[i].c
+                }));
+            }
+    
+            servers = _servers;
+            lockedAmount = msg.value;
+    
+            emit Commit(client, servers, msg.value);
+        }
+    
+        // 服务提供者提交他们的ai和bi
+        function submit(uint256 _ai, uint256 _bi) external {
+            require(block.timestamp <= commitEndTime, unicode"提交阶段已结束");
+            require(submissions[msg.sender].submitted == false, unicode"已提交过");
+    
+            // 验证提交者是否是有效服务提供者
+            bool isValidServer = false;
+            for (uint256 i = 0; i < servers.length; i++) {
+                if (servers[i] == msg.sender) {
+                    isValidServer = true;
+                    break;
+                }
+            }
+            require(isValidServer, unicode"不是有效服务提供者");
+    
+            submissions[msg.sender] = Submission(_ai, _bi, true);
+            submissionCount++;
+    
+            emit Submit(msg.sender, _ai, _bi);
+        }
+    
+        // 客户公开之前承诺的e值
+        function reveal(uint256 _e) external onlyClient onlyDuringRevealPhase {
+            e = _e;
+            revealed = true;
+    
+            emit Reveal(client, _e);
+    
+            // 评估提交情况并进行资金分配
+            _evaluateSubmissions();
+        }
+    
+        // 评估所有服务提供者的提交，并决定资金分配或退款
+        function _evaluateSubmissions() internal {
+            uint256 successCount = 0;
+            uint256 failCount = 0;
+    
+            for (uint256 i = 0; i < n; i++) {
+                address server = servers[i];
+                Submission memory submission = submissions[server];
+                Tuple memory tuple = tuples[i];
+    
+                // 如果服务提供者未提交，默认提交(0, 0)
+                if (!submission.submitted) {
+                    submission = Submission(0, 0, true);
+                }
+    
+                // 验证g^(b_i - e * a_i) 是否等于 h_i
+                if (_powMod(g, submission.bi - e * submission.ai) == tuple.h) {
+                    successCount++;
+                } else {
+                    failCount++;
+                }
+            }
+    
+            // 分配资金或退款
+            if (failCount <= t) {
+                uint256 amountPerWinner = lockedAmount / successCount;
+                for (uint256 i = 0; i < n; i++) {
+                    address server = servers[i];
+                    Submission memory submission = submissions[server];
+                    Tuple memory tuple = tuples[i];
+                    if (_powMod(g, submission.bi - e * submission.ai) == tuple.h) {
+                        payable(server).transfer(amountPerWinner);
+                    }
+                }
+                emit DistributeFunds(successCount, amountPerWinner);
+            } else {
+                payable(client).transfer(lockedAmount); // 如果失败数量超过阈值，退款给客户
+                emit RefundClient(lockedAmount);
+            }
+        }
+    
+        // 用于计算群的指数运算（g^x mod p）
+        function _powMod(uint256 base, uint256 exponent) internal pure returns (uint256) {
+            return base ** exponent;  // 在此处假设使用一个安全的大整数库或实现
+        }
+    
+        // 如果客户未能按时公开，平分资金给所有服务提供者
+        function distributeIfNotRevealed() external afterRevealPhase {
+            require(!revealed, unicode"已公开");
+    
+            uint256 amountPerServer = lockedAmount / n;
+            for (uint256 i = 0; i < n; i++) {
+                payable(servers[i]).transfer(amountPerServer);
+            }
+    
+            emit TimeoutDistribute(amountPerServer);
+        }
+    }
+\end{lstlisting}
+
+由于区块链公开且不可篡改，恶意的客户端或是服务器行为都会被记录在区块链上。服务提供者与客户端都可以根据信用记录进行筛选，使恶意的节点与客户端无法参与到协议中。
 
 \subsection{节点激励模型}
-\todo{套一下DePIN的模型，节点提供服务获得积分。}
+上文的协议要求客户端首先将一笔代币预支付于合约中。同时，合约也保证，只要失败的查询个数不超过阈值，正确回答问题的节点就能得到报酬。因此，节点通过回答客户端的请求获益，这激励了节点积极参与这一协议。

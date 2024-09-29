@@ -1,11 +1,11 @@
 \section{可验证计算}
-\todo{简单讲讲外包计算和验证就行}
 外包计算（Outsource Computation，OC） \cite{USENIX:GreHohWat11, C:ChuKalVad10} 是一种客户端-服务端模型，允许客户端将计算过程委托给服务器，而客户端仅提供输入并接受输出。在外包计算中，客户端通常计算能力有限，这一模型使得客户端可以利用服务端的计算能力来完成复杂的任务。在这一过程中，一个重要的问题是如何验证服务端的计算结果。可验证计算（Verifiable Computation，VC）是解决这一问题的一种方法。在VC中，服务端需要提供一个证明，证明其计算结果是正确的。客户端可以通过验证这一证明来确保服务端的计算结果的正确性。显然，验证这一证明的过程必须是高效的，验证效率需要高于计算效率，否则客户端可以直接计算结果而不需要将计算外包。
 
 PIR可以看作一种特殊的外包计算。其特殊之处在于，客户端外包给服务器的是数据库的存储而非计算。同时，客户端还要保护己方输入，不能将明文请求直接传输给服务器。在传统的PIR协议中，往往不考虑服务器给出的查询结果是否可靠。换言之，传统PIR协议假设服务器是半诚实的。然而如前文所述，验证计算结果一直是外包计算的一个重要构成部分。如 \cite{VeriSimplePIR, APIR, SVPIR18} 等工作拓展了这一场景，讨论了如何与恶意的服务器进行PIR查询。我们首先给出一个基于离线-在线PIR框架的可验证PIR定义：
 
 \begin{definition}[可验证PIR]
-    一个\textit{可验证PIR}方案$\Pi$允许客户端从数据库$\db$中检索记录$\db_\dbidx$，而不向$\servercount$个服务器中任何一个泄露索引$\dbidx$。该方案由算法元组$\Pi = (Setup, Hint, Query, Answer, Reconstruct, Refresh)$组成：
+    一个\textit{可验证PIR}方案$\Pi$允许客户端从数据库$\db$中检索记录$\db_\dbidx$，而不向$\servercount$个服务器中任何一个泄露索引$\dbidx$。该方案由算法元组$\Pi = (Setup, Hint, Query,\\ Answer, Reconstruct, Refresh)$组成：
+
     离线部分：
     \begin{itemize}[leftmargin=*]
         \item $Setup(1^\lambda,\dbsize) \rightarrow \query_\hint$。给定数据库大小$\dbsize$和安全参数$\lambda$，生成Hint查询$\query_\hint$。

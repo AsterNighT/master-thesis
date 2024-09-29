@@ -109,6 +109,7 @@
 
 \input{config/path}
 \input{config/commands}
+\input{config/solidity-highlighting}
 \input{config/format/format}
 \input{body/notations}
 \input{body/commands}

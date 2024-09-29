@@ -3,13 +3,14 @@
 \subsection{实验设计}
 本文实现了单服务器与多服务器两种方案。我们根据$\dbsize$、$\lambda$ 和$\querycount$计算参数，以保证安全级别至少为 $\lambda=128$，并且至少支持$\querycount=\sqrt{\dbsize}\log{\dbsize}$次查询（$\dbsize$是数据库中的记录数）。所有测试均在单线程上进行，并取10次运行的平均值。对于双服务器PIR方案，两个服务器的操作是串行执行的。我们测试了这些方案的离线阶段和在线阶段，还考虑了存储成本。一些方案，例如Piano，要求在在线阶段缓存查询结果，这种存储开销被包含在存储成本中。数据传输的时间未包括在时间计算中，但总的通信量会明确给出。测试在配备16核Intel(R) Xeon(R) E-2288G CPU @ 3.70GHz和128GiB RAM的服务器上进行。共计于五个数据库上进行测试，数据库大小从256MiB到32GiB不等，但都由32字节的记录组成。
 
-我们对本文方案的性能进行了全面评估，并与当前领先的双服务器PIR、单服务器PIR和可验证PIR方案进行了对比。由于本文的验证过程设计为可插拔模块，我们测试了两种不同版本：一种是启用验证功能的版本，另一种是未启用验证功能的版本。在评估结果的展示中，“本文(NV)”表示未包含验证过程的本文版本。对于双服务器PIR，我们选择了DPF-PIR \cite{EC:GilIsh14}、TreePIR \cite{C:LazPap23}和APIR \cite{APIR23}作为我们的比较对象。在单服务器协议中，我们的比较对象包括SimplePIR \cite{SimplePIR}、VeriSimplePIR \cite{VeriSimplePIR}和Piano \cite{Piano}。其中，VeriSimplePIR和APIR是可验证PIR方案，这意味着它们能确保恶意服务器响应的完整性。其余方案则基于半诚实服务器的假设。
+我们对本文方案的性能进行了全面评估，并与当前领先的双服务器PIR、单服务器PIR和可验证PIR方案进行了对比。由于本文的验证过程设计为可插拔模块，我们测试了两种不同版本：一种是启用验证功能的版本，另一种是未启用验证功能的版本。在评估结果的展示中，“本文(NV)”表示未包含验证过程的本文版本。对于双服务器PIR，我们选择了DPF-PIR \cite{EC:GilIsh14}、TreePIR \cite{C:LazPap23}和APIR \cite{APIR}作为我们的比较对象。在单服务器协议中，我们的比较对象包括SimplePIR \cite{SimplePIR}、VeriSimplePIR \cite{VeriSimplePIR}和Piano \cite{Piano}。其中，VeriSimplePIR和APIR是可验证PIR方案，这意味着它们能确保恶意服务器响应的完整性。其余方案则基于半诚实服务器的假设。
 
 我们在测试中主要考虑了两个问题：(i) 验证的成本是多少？(ii) 本文的方案与当前领先的PIR方案相比表现如何？
 
 \begin{table*}[]
-    \caption{双服务器PIR方案的对比。DPF-PIR和APIR方案没有采用离线-在线模型。在数据库大于8 GiB时，APIR会消耗超过128 GiB的内存，无法完成测试。}
+    \caption{双服务器PIR方案的对比}
     \label{tab:two-server-evaluation}
+    \resizebox{\columnwidth}{!}{%
     \begin{tabular}{@{}lc|ccc|cccccc@{}}
         \toprule
                   & \multicolumn{1}{l|}{}     & \multicolumn{3}{c|}{离线} & \multicolumn{6}{c}{在线}                                                                                                                      \\ \midrule
@@ -41,11 +42,13 @@
         TreePIR   &                           & 73.50                        & 84.00                      & 510.92  & 2048.20                       & \multicolumn{1}{c|}{0.70}    & 11.33 & 16.86    & 0.00        & 28.19    \\
         APIR      &                           & -                            & -                          & -       & -                             & \multicolumn{1}{c|}{-}       & -     & -        & -           & -        \\ \bottomrule
     \end{tabular}
+    }
 \end{table*}
 
 \begin{table*}[]
-    \caption{单服务器PIR方案的对比。VeriSimplePIR在数据库大于8GiB时以及SimplePIR在数据库大于32GiB时消耗超过128 GiB的内存，无法完成测试。VeriSimplePIR和SimplePIR的离线计算是针对数据库进行的，并且可以供多个客户端重复使用。}
+    \caption{单服务器PIR方案的对比}
     \label{tab:single-server-evaluation}
+    \resizebox{\columnwidth}{!}{%
     \begin{tabular}{@{}cc|ccc|cccccc@{}}
         \toprule
                       &                           & \multicolumn{3}{c|}{离线} & \multicolumn{6}{c}{在线}                                                                                                                    \\ \midrule
@@ -76,12 +79,13 @@
         SimplePIR     &                           & -                            & -                          & -        & -                             & \multicolumn{1}{c|}{-}       & -      & -      & -           & -      \\
         VeriSimplePIR &                           & -                            & -                          & -        & -                             & \multicolumn{1}{c|}{-}       & -      & -      & -           & -      \\
         Piano         &                           & 32768.00                     & 409.08                     & 13490.68 & 1023.99                       & \multicolumn{1}{c|}{128.02}  & 7.64   & 2.36   & 0.00        & 10.00  \\ \bottomrule
-    \end{tabular}
+    \end{tabular}%
+    }
 \end{table*}
 \subsection{结果分析}
 
 \paragraph{双服务器方案}
-双服务器PIR方案的基准测试结果如表 \ref{tab:two-server-evaluation} 所示。比较本文两个版本，可以明显看出，验证功能会导致离线计算增加约3-4倍，在线计算增加2倍，通信和存储成本翻倍。
+双服务器PIR方案的基准测试结果如表 \ref{tab:two-server-evaluation} 所示。DPF-PIR和APIR方案没有采用离线-在线模型。在数据库大于8 GiB时，APIR会消耗超过128 GiB的内存，无法完成测试。比较本文两个版本，可以明显看出，验证功能会导致离线计算增加约3-4倍，在线计算增加2倍，通信和存储成本翻倍。
 
 在这些方案中，本文的方案在在线计算方面超越了当前领先的亚线性方案TreePIR~\cite{C:LazPap23}，且的总体通信量更小。这种优越的性能主要源于我们方案简化的查询构造以及对虚构查询的消除。在线阶段不再需要昂贵的wPPRF和虚构查询，显著提高了性能。关于离线阶段，本文方案通过使用一个主密钥表示集合，通信成本稍低，但计算成本稍高，主要原因是缺少AVX指令的支持。
 
@@ -90,7 +94,7 @@ DPF-PIR~\cite{EC:GilIsh14} 是一个线性PIR方案，这意味着其在线计�
 APIR \cite{APIR} 是目前领先的双服务器可验证PIR方案。本文的方案在所有数据库大小中均在计算效率上超越了APIR。此外，基于Merkle证明的APIR导致数据库大小显著增加，这使其受限于内存不足问题，无法在大于8 GiB的数据库上运行。
 
 \paragraph{单服务器方案}
-单服务器PIR方案的测试结果如表 \ref{tab:single-server-evaluation} 所示。
+单服务器PIR方案的测试结果如表 \ref{tab:single-server-evaluation} 所示。VeriSimplePIR在数据库大于8GiB时以及SimplePIR在数据库大于32GiB时消耗超过128 GiB的内存，无法完成测试。VeriSimplePIR和SimplePIR的离线计算是针对数据库进行的，并且可以供多个客户端重复使用。
 
 Piano~\cite{Piano} 是当前最先进的单服务器亚线性方案。Piano要求服务器计算$\sqrt{\dbsize}$个答案以隐藏被查询的索引，因此增加了计算和通信成本。因此，本文的方案在计算和通信上均优于Piano，在线计算速度提高了6倍，在线上传量相同，但在线下载量显著减少。
 
@@ -111,7 +115,7 @@ Piano~\cite{Piano} 是当前最先进的单服务器亚线性方案。Piano要�
         \includegraphics[width=0.8\linewidth]{figure/cost_8gb.png}
         \caption{8 GiB}
     \end{subfigure}%
-    \caption{单服务器PIR方案在财务成本方面的对比。VeriSimplePIR的8 GiB是估计得到的。}
+    \caption{单服务器PIR方案在财务成本方面的对比}
     \label{fig:single-server-cost}
 \end{figure*}
 
