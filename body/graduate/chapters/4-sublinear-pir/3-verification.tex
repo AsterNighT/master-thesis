@@ -1,8 +1,6 @@
 \section{可验证的PIR}
 \label{sec:verification}
-在本节中，我们描述了一种将可验证性作为插件嵌入到PIR方案中的技术。“插件”的概念意味着可验证性可以在不修改原有方案基础结构的情况下进行整合。基础方案已经在在第\ref{sec:construction}节中介绍。
-
-我们首先正式提出可验证离线-在线PIR的定义，该概念扩展了先前定义的离线-在线PIR。
+在本节中，我们描述了一种将可验证性嵌入到PIR方案中的技术。我们首先正式提出可验证离线-在线PIR的定义，该概念扩展了先前定义的离线-在线PIR。
 
 \begin{definition}[可验证离线-在线PIR]
     一个可验证离线-在线PIR方案$\Pi$允许客户端从数据库$\db$中检索记录$\db_\dbidx$，而不向$\servercount$个服务器中任意一个泄露索引$\dbidx$，同时确保结果的完整性。该方案包含算法组$\Pi = (Setup, Hint, Query, Answer, Reconstruct, Refresh)$：
@@ -20,31 +18,31 @@
             \item $Refresh(\clientstate, \hint, \answer) \rightarrow \hint$：根据响应$\answer$和私有状态$\clientstate$更新Hint~$\hint$。
         \end{itemize}
     \end{center}
-    在两服务器（$\servercount$=2）时，如引言所述，我们假设Query服务器是恶意的，而Hint服务器是半诚实的。Hint服务器始终诚实地遵循协议，而Query服务器可能会偏离协议。先前的工作 \cite{APIR} 采用了类似的设置，但它们不要求客户端知道哪个服务器是半诚实的。正确的数据库被定义为Hint算法 $Hint$ 接受的数据库。在单服务器设置（$\servercount=1$）中，正确的数据库由数据所有者提供的数据库摘要识别。根据受信任的摘要，客户端可以在$Hint$算法中拒绝错误的数据库。该方案应满足以下属性：
+    在两服务器（$\servercount$=2）时，我们假设Query服务器是恶意的，而Hint服务器是半诚实的。先前的工作 \cite{APIR} 采用了类似的设置，但它们不要求客户端知道哪个服务器是半诚实的。正确的数据库定义为Hint算法 $Hint$ 接受的数据库。在单服务器设置（$\servercount=1$）中，正确的数据库由数据所有者提供的摘要定义。该方案应满足以下属性：
 
     \begin{itemize}
-        \item \textbf{正确性}：给定安全参数$\lambda$，任意数据库$\db$和索引$\dbidx$以及任意多项式数量的查询索引序列$\{\dbidx_0,\dbidx_1, \dots\}$，如果$\servercount$服务器和客户端诚实地遵循$\Pi$，则客户端输出$\{\db_{\dbidx_0},\db_{\dbidx_1}, \dots\}$的概率为$1-negl(\lambda)$。
+        \item \textbf{正确性}：给定安全参数$\lambda$，任意数据库$\db$和索引$\dbidx$以及任意多项式数量的查询索引序列$\{\dbidx_0,\dbidx_1, \dots\}$，如果服务器和客户端诚实地遵循$\Pi$，则客户端输出$\{\db_{\dbidx_0},\db_{\dbidx_1}, \dots\}$的概率为$1-negl(\lambda)$。
         \item \textbf{完整性}：给定安全参数$\lambda$，任意数据库$\db$和索引$\dbidx$，任意概率多项式时间敌手 $\adversary$作为服务器之一与客户端交互时，客户端重构出错误记录$\widehat{\db_\dbidx} \neq \db_\dbidx$的概率为 $negl(\lambda)$。
         \item \textbf{隐私性（针对选择性失败攻击）}：该属性在定义 \ref{def:privacy-sfa} 中给出。
     \end{itemize}
 \end{definition}
 \subsection{一种常用于多方安全计算的验证方案}
-回想一下，在许多用于恶意安全的多方计算协议中，验证函数 $m = f(x)$ 的计算通常是以第二个值 $n = g(x) = \alpha f(x)$ 的形式进行的，其中 $\alpha \in \recordfield$ 代表一个隐藏的系数。然后验证过程检查是否满足 $m\alpha = n$。诚实的参与者总是能通过此验证，而不诚实的行为通过验证的概率可忽略。
+在多方安全计算协议中，函数 $m = f(x)$ 的计算通常是由一个相关量 $n = g(x) = \alpha f(x)$ 的验证的。其中， $\alpha \in \recordfield$ 代表一个隐藏的系数。验证过程检查是否有 $m\alpha = n$。多方安全计算的性质保障了参与者无法知晓他们计算出的值。诚实的参与者总是能通过此验证，而如果$\recordfield$足够大，不诚实的计算通过验证的概率非常小。
 
 \subsection{验证方案在PIR中的应用}
 
-在我们的协议中，我们采用类似的方法来验证查询响应$\queryanswer$的真实性。
+在我们的协议中，我们采用类似的方法来验证$\queryanswer$的真实性。
 
-回想一下在第 \ref{sec:construction} 节中的构造中，客户端最初从服务器获取了一些Hint。基于我们假设的半诚实Hint服务器和恶意的Query服务器，我们唯一可靠的手段是提前获取的正确Hint。因此，我们选择在每个Hint中包含额外的信息，以使客户端能够进行后续的答案验证。升级后的Hint包含两个部分：和校验$\sumhint$和随机校验$\randomhint$。对于一个特定集合$S = \{x_j \mid j\in [s]\}$，客户端首先生成一组随机数 $SR\coloneqq \{r_j \mid j\in [s]\}$。$\sumhint, \randomhint$ 定义为如下：
+在第 \ref{sec:construction} 节中的构造中，客户端最初从服务器获取了一些Hint。我们选择在每个Hint中包含一个额外的校验值，以使客户端能够进行后续的答案验证。升级后的Hint中的校验值包含两个部分：和校验$\sumhint$和随机校验$\randomhint$。对于一个特定集合$S = \{x_j \mid j\in [\setsize]\}$，一组随机数 $SR\coloneqq \{r_j \mid j\in [\setsize]\}$，$\sumhint, \randomhint$ 定义为如下：
 
 $$
     \begin{array}{l}
-        \sumhint \coloneqq  \sum_{j \in [s]} \db_{x_j}, \\
-        \randomhint \coloneqq  \sum_{j \in [s]} r_j\cdot \db_{x_j}
+        \sumhint \coloneqq  \sum_{j \in [\setsize]} \db_{x_j}, \\
+        \randomhint \coloneqq  \sum_{j \in [\setsize]} r_j\cdot \db_{x_j}
     \end{array}
 $$
 
-相应的，查询过程被分为两个不同的部分：和查询$\sumquery$和随机查询$\randomquery$。假设$x_\dbidx$是查询的索引。$\sumquery$和$\randomquery$的定义如下：
+查询被分为两个不同的部分：和查询$\sumquery$和随机查询$\randomquery$。假设$x_\dbidx$是查询的索引。$\sumquery$和$\randomquery$的定义如下：
 
 $$
     \begin{array}{l}
@@ -53,7 +51,7 @@ $$
     \end{array}
 $$
 
-在接收到这两个查询后，Query服务器使用类似的求和方法计算答案$\sumanswer$和$\randomanswer$：
+在接收到这两个查询后，Query服务器计算答案$\sumanswer$和$\randomanswer$：
 
 $$
     \begin{array}{l}
@@ -62,15 +60,15 @@ $$
     \end{array}
 $$
 
-随后，Query服务器将答案发送给客户端，客户端接着重构记录$\db_{x_\dbidx} \coloneqq \sumhint-\sumanswer$，并通过检查以下条件来验证它：
+Query服务器将答案发送给客户端，客户端重构记录$\db_{x_\dbidx} \coloneqq \sumhint-\sumanswer$，通过以下条件来验证答案：
 
 $$
     \randomhint-\randomanswer = r_\dbidx \cdot (\sumhint-\sumanswer)
 $$
 
-如果Query服务器如实作答，则方程的左边等于为$r_{\dbidx} \cdot \db_{x_\dbidx}$。由于$\sumhint - \sumanswer = \db_{x_\dbidx}$，方程应成立。如果验证未通过，客户端将输出 $\bot$ 以表示存在差异。
+如果Query服务器如实作答，则等式的左边等于$r_{\dbidx} \cdot \db_{x_\dbidx}$。由于$\sumhint - \sumanswer = \db_{x_\dbidx}$，等式应成立。如果验证未通过，客户端输出 $\bot$。
 
-在我们的框架中，我们进一步采用第 \ref{sec:construction} 节中讨论的优化策略来提高效率。集合 $S$ 是使用密钥$\setkey$通过PRF进行展开的。同样，集合$SR$ 可以通过另一个使用密钥$\randomset$的PRF进行展开：$fr_{\randomset}: [\sqrt{\dbsize}] \to \recordfield$。因此，集合 SR 也可以用一个短密钥$\randomset$来表示。
+在我们的框架中，我们进一步采用第 \ref{sec:construction} 节中讨论的利用PRF压缩集合的策略来提高空间效率。集合 $S$ 可以使用密钥$\setkey$通过一个PRF展开。集合$SR$ 可以通过另一个PRF展开：$fr_{\randomset}: [\sqrt{\dbsize}] \to \recordfield$。因此，集合 SR 也可以用一个短密钥$\randomset$来表示。
 
 $$
     \randomset \to SR = \{fr_{\randomset}(j) \mid j\in[\sqrt{\dbsize}]\}
@@ -78,13 +76,13 @@ $$
 
 稍稍滥用符号，我们使用 $Eval(\randomset, j)$ 作为 $fr_{\randomset}(j)$ 的简写。
 
-接下来，我们深入探讨如何从在线查询中隐藏从集合中删除的元素的问题。与索引集合一致，这一随机数组成的集合$SR$中被删去元素的位置必然在包含查询索引$\dbidx$的块中。在半诚实方案中，一个随机Crumb（$\crumb$）替换了被删去的索引，从而隐藏了$\dbidx$所在的块。同样，在验证方案中，一个随机元素$r \leftarrow \recordfield$可以用于隐藏$SR$中被删去删除的元素。具体来说，令$\blockidx \coloneqq \lfloor \dbidx /\sqrt{\dbsize} \rfloor$为包含查询索引$\dbidx$的块，客户端从$\recordfield$中采样$r \leftarrow \recordfield$，并将$SR[\blockidx]$替换为$r$。在客户端接收到响应$\randomanswer$后，它可以移除Crumb值的贡献（$\crumbvalue$）并更新$\randomanswer$，即：
+与索引集合一致，这一随机数组成的集合$SR$中被删去元素的位置必然在包含查询索引$\dbidx$的块中。在半诚实方案中，一个随机Crumb（$\crumb$）替换了被删去的索引，从而隐藏了$\dbidx$所在的块。同样，在验证方案中，一个随机元素$r \leftarrow \recordfield$可以用于隐藏$SR$中被删去删除的元素。具体来说，令$\blockidx \coloneqq \lfloor \dbidx /\sqrt{\dbsize} \rfloor$为包含查询索引$\dbidx$的块，客户端从$\recordfield$中采样$r \leftarrow \recordfield$，并将$SR[\blockidx]$替换为$r$。在客户端接收到响应$\randomanswer$后，它可以移除Crumb值的贡献（$\crumbvalue$）并更新$\randomanswer$，即：
 $$\randomanswer \coloneqq \randomanswer - r\cdot \crumbvalue$$
 随后，客户端通过检查
 $$\randomhint-\randomanswer = Eval(\randomset,\blockidx)\cdot \db_{\dbidx}$$
 来执行验证。如果验证失败，客户端输出$\bot$。
 
-我们在下图中展示了我们的双服务器可验证PIR方案，其中验证过程以蓝色突出显示。这一方案的效率与第 \ref{sec:construction} 节中提出的方案相当。
+我们在下图中展示了我们的双服务器可验证PIR方案，其中验证过程以蓝色突出显示。
 
 % \begin{figure*}
     \begin{mdframed}
@@ -125,25 +123,25 @@ $$\randomhint-\randomanswer = Eval(\randomset,\blockidx)\cdot \db_{\dbidx}$$
     \label{fig:two-server-verify}
 % \end{figure*}
 
-我们提出了以下关于安全性和效率的定理：
+% 我们提出了以下关于安全性和效率的定理：
 
-\begin{theorem}
-    \label{thm:1}
-    图 \ref{fig:two-server-verify} 中描述的方案是一个双服务器可验证的离线-在线PIR方案。设 $\alpha(\lambda)$ 为任意超常数函数，即$\alpha(\lambda)$ = $\omega(1)$。假设数据库索引大小为$O(1)$，PRF密钥大小为$O_\lambda(1)$。在一个包含$\dbsize$条记录、每条大小为$\recordsize$的数据库上，存储$\hintcount = \magictotal$个Hint，该方案的效率如下：
+% \begin{theorem}
+%     \label{thm:1}
+%     图 \ref{fig:two-server-verify} 中描述的方案是一个双服务器可验证的离线-在线PIR方案。设 $\alpha(\lambda)$ 为任意超常数函数，即$\alpha(\lambda)$ = $\omega(1)$。假设数据库索引大小为$O(1)$，PRF密钥大小为$O_\lambda(1)$。在一个包含$\dbsize$条记录、每条大小为$\recordsize$的数据库上，存储$\hintcount = \magictotal$个Hint，该方案的效率如下：
     
-    \noindent 在离线阶段：
-    \begin{itemize}[itemsep=0em]
-        \item 通信量为$O_\lambda(1)$上传，$2\recordsize\hintcount + \recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$下载。
-        \item 客户端计算复杂度为$O_\lambda(\hintcount)$，服务器计算复杂度为$O_\lambda(\hintcount) + O(\recordsize\sqrt{\dbsize}\hintcount)$。
-    \end{itemize}
-    在在线阶段：
-    \begin{itemize}[itemsep=0em]
-        \item 向Query服务器通信量为：$\recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$上传，$2\recordsize$下载。
-        \item 向Hint服务器通信量为：$O(\sqrt{\dbsize})$上传，$\recordsize\sqrt{\dbsize}$下载。
-        \item 客户端计算复杂度为$O_\lambda(\sqrt{\dbsize}) + O(\recordsize\sqrt{\dbsize})$，服务器计算复杂度为$O(\recordsize\sqrt{\dbsize})$。
-        \item 支持多项式数量的查询。
-    \end{itemize}
-\end{theorem}
+%     \noindent 在离线阶段：
+%     \begin{itemize}[itemsep=0em]
+%         \item 通信量为$O_\lambda(1)$上传，$2\recordsize\hintcount + \recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$下载。
+%         \item 客户端计算复杂度为$O_\lambda(\hintcount)$，服务器计算复杂度为$O_\lambda(\hintcount) + O(\recordsize\sqrt{\dbsize}\hintcount)$。
+%     \end{itemize}
+%     在在线阶段：
+%     \begin{itemize}[itemsep=0em]
+%         \item 向Query服务器通信量为：$\recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$上传，$2\recordsize$下载。
+%         \item 向Hint服务器通信量为：$O(\sqrt{\dbsize})$上传，$\recordsize\sqrt{\dbsize}$下载。
+%         \item 客户端计算复杂度为$O_\lambda(\sqrt{\dbsize}) + O(\recordsize\sqrt{\dbsize})$，服务器计算复杂度为$O(\recordsize\sqrt{\dbsize})$。
+%         \item 支持多项式数量的查询。
+%     \end{itemize}
+% \end{theorem}
 
-\paragraph{恶意的Hint服务器}
-当Hint服务器是恶意的时，该协议是不安全的。在附录 \ref{appendix:hint-server} 中提供了详细的解释和示例。
+% \paragraph{恶意的Hint服务器}
+% 当Hint服务器是恶意的时，该协议是不安全的。在附录 \ref{appendix:hint-server} 中提供了详细的解释和示例。

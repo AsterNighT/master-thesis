@@ -56,23 +56,23 @@ $$S = \{(f_{\setkey}(j)\oplus \shift) + j \cdot \sqrt{\dbsize} \mid j \in [\sqrt
 
 具体来说，当客户端查询记录 $\db_\dbidx$ 时，它首先找到一个包含 $\dbidx$ 的集合 $S$。在从集合中找到 $\dbidx$ 后（由于集合划分的性质，$\dbidx$应该落在块 $\blockidx = \lfloor \dbidx/\sqrt{\dbsize} \rfloor$ 中），它会在块 $\blockidx$ 中找到一个 Crumb $\crumb=(\crumbvalue, \crumboffset)$，并将$S$中第 $\blockidx$ 块对应的偏移替换为 $\crumboffset$ 。这个过程如图 \ref{fig:query} 所示。数据库包含$\dbsize=16$条记录，并被划分为$\sqrt{\dbsize}=4$个区块。 \hyperref[fig:query-a]{a)} $Hint$包含每个块中的一个元素（图中标记为红色）。客户端希望查询记录$\dbidx=9$，该记录位于第三个块。该索引从集合中移除（在第二列中显示），第三个块中的一个Crumb被添加了到集合中（第三列和第四列标记为蓝色）。 \hyperref[fig:query-b]{b)} Query服务器以集合的校验值作为响应。客户端生成一个新的Hint集合以更新Hint和Crumb。Hint服务器以单条记录作为响应。为展示清晰起见，索引在此处以实际值表示。在真实的协议中索引在块中以偏移量表示。
 
-用于替换的Crumb不会影响客户端计算答案。每个Crumb仅包含一个简单的记录，因此可以排除Crumb的贡献来计算真实答案。假设$\answer$是来自服务器的答案，$\crumbvalue$是所用Crumb的值，客户端计算$\answer \coloneqq \answer - \crumbvalue$。最后，客户端可以按照原本协议中的方式利用$\answer$重构记录$\db_\dbidx$。
+Crumb不会影响客户端计算答案。每个Crumb仅包含一条已知的记录，因此可以从答案中去除Crumb的值。假设$\answer$是来自服务器的答案，$\crumbvalue$是所用Crumb的值，答案可以由客户端计算为$\answer \coloneqq \answer - \crumbvalue$。最后，客户端可以按照原本协议中的方式利用$\answer$重构记录$\db_\dbidx$。
 
-Crumb掩盖了客户端想要查询的位置。客户端发送给服务器的集合现在由每个块中的一个元素组成，与查询的索引$\dbidx$完全无关。我们的构造保持了亚线性效率：在离线阶段，客户端接收到大小为$\recordsize\hintcount$的Hint，这些信息由服务器在$O_\lambda(\recordsize\sqrt{\dbsize}\hintcount)$时间内计算。假设$\hintcount\coloneqq \Theta_\lambda(\sqrt{\dbsize})$，当这一计算均摊在$\querycount\coloneqq\Theta_\lambda(\sqrt{\dbsize})$次在线查询上时，每次查询的通信开销为$O(\recordsize\sqrt{\dbsize})$，计算开销为$O_\lambda(\recordsize\sqrt{\dbsize})$。
+Crumb掩盖了客户端想要查询的位置。加入Crumb之后，客户端发送给服务器的集合在每个块中都包含一个随机元素，与查询的索引$\dbidx$完全无关。我们的构造保持了亚线性效率：在离线阶段，客户端接收到大小为$\recordsize\hintcount$的Hint，这些信息由服务器在$O_\lambda(\recordsize\sqrt{\dbsize}\hintcount)$时间内计算。假设$\hintcount\coloneqq \Theta_\lambda(\sqrt{\dbsize})$，当这一计算均摊在$\querycount\coloneqq\Theta_\lambda(\sqrt{\dbsize})$次在线查询上时，每次查询的通信开销为$O(\recordsize\sqrt{\dbsize})$，计算开销为$O_\lambda(\recordsize\sqrt{\dbsize})$。
 
 \subsection{Hint的获取与更新}
-Hint的获取与更新也是离线-在线PIR方案中的关键环节。有几个显然的要点，我们在设计方案时必须考虑到：
+Hint的获取与更新也是离线-在线PIR方案中的重要环节。我们在设计方案时必须考虑到几个要点：
 \begin{itemize}
-    \item 每条记录都需要至少在某一个Hint集合内，否则，在在线阶段查询该记录将无法实现。
-    \item 方案必须支持超过一定数量的在线查询，以将昂贵的离线成本分摊到这些在线查询上。
-    \item 客户端不能重复使用一个Hint，否则服务器通过对比这些Hint就能获得关于查询索引的信息。因此，Hint在一次使用后必须被丢弃。
+    \item 每条记录都需要至少在某一个Hint集合内，否则，在线阶段无法查询该记录。
+    \item 方案必须支持大量的在线查询，以将昂贵的离线成本分摊到这些在线查询上。
+    \item 客户端不能重复使用某一个Hint。否则服务器可以通过比较不同查询中的Hint获得关于查询索引的信息。因此，Hint在使用后必须被丢弃。
 \end{itemize}
 
-离线阶段的Hint和Crumb的获取并不困难的。鉴于服务器$\hintserver$是半诚实的，所有Hint都可以从客户端提供的一个PRF密钥中生成，服务器计算相应的校验值后发送给客户端。Crumb也可以通过相同的方式获取。
+离线阶段的Hint和Crumb的获取并不复杂。鉴于服务器$\hintserver$是半诚实的，所有Hint都可以从客户端提供的一个PRF密钥中生成，服务器计算相应的校验值后发送给客户端。Crumb也可以通过相同的方式获取。
 
-在线阶段的Hint和Crumb更新则需要更复杂的交互。在原本的协议中，更新是通过客户端生成一个包含查询索引$\dbidx$的新集合，并与服务器$\hintserver$交互以获取该集合的Hint来完成的。这一过程也需要隐藏$\dbidx$。理所应当地，我们会想要使用与查询类似的手段，用一个Crumb来掩盖住$\dbidx$。然而，在我们的协议中，Crumb就是从$\hintserver$获取的，不能再用于保护向$\hintserver$发送的请求。否则，$\hintserver$可以通过比较查询和Crumb，得知哪个块被Crumb替换了。
+在线阶段的Hint和Crumb更新则需要更复杂的交互。与查询类似，我们希望使用Crumb来掩盖$\dbidx$。然而，Crumb是从$\hintserver$获取的，不能用于保护向$\hintserver$发送的请求。否则，$\hintserver$可以比较查询和Crumb，得知哪个块被Crumb替换了。
 
-为了解决这一矛盾，我们采用一种不同于查询的方案来更新Hint。客户端仍然生成一个包含查询索引$\dbidx$的新集合$S'$，但是选择一个随机的索引$j$来替换块$\blockidx$中的$\dbidx$。当然，如果$\hintserver$仅以一个校验值响应查询，客户端将无法获知$\db_{j}$是什么，也就没有办法获得原集合$S'$对应的校验值。为了使客户端能够将协议进行下去，$\hintserver$必须直接将收到的查询中包含的 $\sqrt{\dbsize}$ 条记录全部发送给客户端。客户端则通过这$\sqrt{\dbsize}$条记录与之前查询得到的$\db_\dbidx$更新Hint，并使用$\db_{j}$来更新用掉的Crumb。采用这种Hint和Crumb更新方案后，我们的方案现在能够支持多项式数量的查询，这与最近在文献 \cite{C:LazPap23} 中所达成的进展一致。关于正确性的讨论将延后到第 \ref{sec:analysis} 节。完整的协议如下：
+为了解决这一矛盾，我们采用一种不同于查询的方案来更新Hint。客户端仍然生成一个包含查询索引$\dbidx$的新集合$S'$，但是选择一个随机的索引$j$来替换块$\blockidx$中的$\dbidx$。此时，如果$\hintserver$仅以单个校验值响应查询，客户端将无法获知$\db_{j}$是什么，也就没有办法获得原集合$S'$对应的校验值。所以，我们要求$\hintserver$将收到的查询涉及到的 $\sqrt{\dbsize}$ 条记录全部发送给客户端。客户端则通过这$\sqrt{\dbsize}$条记录与之前查询得到的$\db_\dbidx$组合出一个新Hint，并使用$\db_{j}$来更新用掉的Crumb。这种方案能够支持多项式数量的查询，与最先进的协议 \cite{C:LazPap23} 一致。完整的协议如下：
 
 % \begin{algorithm}
     \begin{mdframed}

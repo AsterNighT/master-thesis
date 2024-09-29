@@ -31,11 +31,11 @@
 \end{theorem}
 
 \begin{proof}
-    当且仅当 $Query$ 算法中客户端找不到包含查询索引的Hint时，客户端无法检索到记录。我们证明这一事件的概率是可忽略的。首先，我们证明以下引理：
+    当且仅当 $Query$ 算法中客户端找不到包含查询索引的Hint时，客户端无法检索到记录。我们证明这一事件发生的概率是可忽略的。首先，我们证明以下引理：
 
     \begin{lemma}
     \label{lemma:hint-prob}
-        每个Hint包含特定索引$\dbidx$的概率为$\frac{1}{\sqrt{\dbsize}}$。
+        每个Hint包含任意索引$\dbidx$的概率为$\frac{1}{\sqrt{\dbsize}}$。
     \end{lemma}
 
     \begin{proof}
@@ -68,10 +68,10 @@ $$ Pr(X \ge (1+2)\magicnumber) \le e^{-2^2\magicnumber/(2+2)} = \lambda^{-\alpha
 $$\sqrt{\dbsize}\lambda^{-\alpha(\lambda)} \le \negl(\lambda)$$
 \end{proof}
 
-单服务器的正确性直接来自于双服务器正确性的论证和引理 \ref{lemma:crumb-prob}。
+单服务器的正确性可以直接由双服务器正确性的论证和引理 \ref{lemma:crumb-prob} 推出。
 \end{proof}
 
-从现在起，我们假设 $Query$ 算法永远不会失败。这对于双服务器方案是显而易见的，因为正确性证明表明客户端可以以压倒性概率找到Hint。对于单服务器方案，我们在第 \ref{fig:single-server} 节中的协议内引入了一种额外的解决方法，以确保这一假设成立。
+从现在起，我们假设 $Query$ 算法永远不会失败。对于双服务器方案而言，正确性证明表明客户端可以以压倒性概率找到Hint。对于单服务器方案，我们在第 \ref{fig:single-server} 节中的协议内引入了一种额外的解决方法，以确保这一假设成立。
 
 \subsection{完整性}
 \label{appendix:integrity}
@@ -79,7 +79,7 @@ $$\sqrt{\dbsize}\lambda^{-\alpha(\lambda)} \le \negl(\lambda)$$
 我们首先给出完整性的形式化定义。
 
 \begin{definition}[双服务器方案的完整性]
-给定安全参数 $\lambda$，对于所有多项式时间的概率性对手$\adversary_{\mathrm{query}}$，假设该对手控制了查询服务器，定义如下概率为$PI_\dbidx(\adversary_{\mathrm{query}})$。
+给定安全参数 $\lambda$，对于所有多项式时间的概率性对手$\adversary_{\mathrm{query}}$，假设该对手控制了Query服务器，定义如下概率为$PI_\dbidx(\adversary_{\mathrm{query}})$。
             $$ Pr\left[
             c \notin \{\db_\dbidx,\bot\}:
             \begin{array}{rcl}
@@ -103,7 +103,7 @@ $$\sqrt{\dbsize}\lambda^{-\alpha(\lambda)} \le \negl(\lambda)$$
 
 \begin{lemma}
 \label{lemma:integrity}
-对于任何非零偏移量$\Delta=(\Delta^+,\Delta^\times)\in \recordfield^2, \Delta \neq (0, 0)$，以下概率表示客户端接受查询服务器提供的错误答案 $a'=a + \Delta$ 的可能性。用$P_{\Delta, \dbidx}$表示该概率。
+对于任何非零偏移量$\Delta=(\Delta^+,\Delta^\times)\in \recordfield^2, \Delta \neq (0, 0)$，以下概率表示客户端接受Query服务器提供的错误答案 $a'=a + \Delta$ 的可能性。用$P_{\Delta, \dbidx}$表示该概率。
 $$ Pr\left[
     c\neq \bot:
     \begin{array}{rcl}
@@ -202,7 +202,7 @@ $$Ok(c)=\left\{\begin{array}{ll}
     \end{array}\right.$$
 \begin{mdframed}
     \begin{multicols}{2}
-        \textbf{World 0}:
+        \textbf{世界 0}:
         \begin{itemize}
             \item For $t=1,2,\dots$:
                   \begin{itemize}
@@ -213,7 +213,7 @@ $$Ok(c)=\left\{\begin{array}{ll}
                       \item $Ok(c_t) \rightarrow \adversary$
                   \end{itemize}
         \end{itemize}
-        \textbf{World 1}:
+        \textbf{世界 1}:
         \begin{itemize}
             \item For $t=1,2,\dots$:
                   \begin{itemize}
@@ -238,11 +238,11 @@ $$Ok(c)=\left\{\begin{array}{ll}
     在离线阶段，$\queryserver$不与$\client$交互。因此，我们只需要考虑在线阶段。考虑以下混合（hybrids）:
     
     \begin{itemize}
-        \item \textbf{Hyb 0}: 这是现实世界的执行。在这个混合中，\simulator 的执行方式与 \client 在 \textbf{World 0} 中的完全相同。
+        \item \textbf{Hyb 0}: 这是现实世界的执行。在这个混合中，\simulator 的执行方式与 \client 在 \textbf{世界 0} 中的完全相同。
         \item \textbf{Hyb 1}: 在这个混合中，$\simulator$放弃了$\dbidx_t$并随机选择一个索引$\dbidx_t'$作为其查询索引。根据引理 \ref{lemma:privacy}，此混合与 \textbf{Hyb 0} 是不可区分的。
         \item \textbf{Hyb 2}: 在这个混合中，$\simulator$收到一个比特$b$。如果$\adversary$给出正确答案，$b$为$1$，否则为$0$。$\simulator$将$b$输出给$\adversary$，而不是验证答案。这个混合与 \textbf{Hyb 1} 是不可区分的。根据引理 \ref{lemma:integrity}，除了可忽略的概率外，比特$b$与$Ok(c_t)$的输出相同。
     \end{itemize}
-    $\simulator$在 \textbf{Hyb 2} 中的执行与 \textbf{World 1} 完全相同。
+    $\simulator$在 \textbf{Hyb 2} 中的执行与 \textbf{世界 1} 完全相同。
 \end{proof}
     
 对$\hintserver$的隐私性单独定义。
@@ -251,8 +251,8 @@ $$Ok(c)=\left\{\begin{array}{ll}
     给定安全参数$\lambda$，如果存在一个概率性多项式时间的模拟器$\simulator(1^\lambda, \dbsize)$，使得对于任何控制服务器$\hintserver$的概率多项式时间对手$\adversary$，当同不和$\adversary$串通的恶意$\queryserver$交互时，$\adversary$无法以关于$\lambda$不可忽略的概率区分以下世界，则两服务器方案对$\hintserver$具有选择失败隐私性。
     
     \begin{itemize}
-        \item \textbf{World 0}: 在在线阶段的每一步$t$，$\adversary$自适应地选择下一个索引$\dbidx_t$，而$\client$使用$\dbidx_t$作为查询索引。若答案被接受，客户端会在每次查询后输出$1$给$\adversary$，否则输出$0$。
-        \item \textbf{World 1}: 在在线阶段的每一步$t$，$\adversary$自适应地选择下一个索引$\dbidx_t$。$\simulator$在没有$\dbidx_t$信息的情况下运行，但在$\queryserver$给出正确答案时收到比特$1$，否则为$0$。$\simulator$在每次查询后将比特输出给$\adversary$。
+        \item \textbf{世界 0}: 在在线阶段的每一步$t$，$\adversary$自适应地选择下一个索引$\dbidx_t$，而$\client$使用$\dbidx_t$作为查询索引。若答案被接受，客户端会在每次查询后输出$1$给$\adversary$，否则输出$0$。
+        \item \textbf{世界 1}: 在在线阶段的每一步$t$，$\adversary$自适应地选择下一个索引$\dbidx_t$。$\simulator$在没有$\dbidx_t$信息的情况下运行，但在$\queryserver$给出正确答案时收到比特$1$，否则为$0$。$\simulator$在每次查询后将比特输出给$\adversary$。
     \end{itemize}
     
     我们强调$\adversary$必须诚实地遵循协议。
@@ -272,8 +272,8 @@ $$Ok(c)=\left\{\begin{array}{ll}
     给定安全参数$\lambda$，如果存在一个概率性多项式时间的模拟器$\simulator(1^\lambda, \dbsize)$，使得对于任何控制$\server$的概率多项式时间对手$\adversary$，$\adversary$无法以关于$\lambda$不可忽略的概率区分以下世界，则单服务器方案对$\server$具有选择性失败隐私性。
     
     \begin{itemize}
-        \item \textbf{World 0}: 在在线阶段的每一步$t$，$\adversary$自适应地选择下一个索引$\dbidx_t$，而$\client$使用$\dbidx_t$作为查询索引。若答案被接受，客户端会在每次查询后输出$1$给$\adversary$，否则输出$0$。
-        \item \textbf{World 1}: 在在线阶段的每一步$t$，$\adversary$自适应地选择下一个索引$\dbidx_t$。$\simulator$在没有$\dbidx_t$信息的情况下运行，但在$\adversary$给出正确答案时收到比特$1$，否则为$0$。$\simulator$在每次查询后将比特输出给$\adversary$。
+        \item \textbf{世界 0}: 在在线阶段的每一步$t$，$\adversary$自适应地选择下一个索引$\dbidx_t$，而$\client$使用$\dbidx_t$作为查询索引。若答案被接受，客户端会在每次查询后输出$1$给$\adversary$，否则输出$0$。
+        \item \textbf{世界 1}: 在在线阶段的每一步$t$，$\adversary$自适应地选择下一个索引$\dbidx_t$。$\simulator$在没有$\dbidx_t$信息的情况下运行，但在$\adversary$给出正确答案时收到比特$1$，否则为$0$。$\simulator$在每次查询后将比特输出给$\adversary$。
     \end{itemize}$\adversary$被允许任意偏离协议。
 \end{definition}
     
@@ -285,7 +285,7 @@ $$Ok(c)=\left\{\begin{array}{ll}
     该证明需要一些额外的论证。由于$\adversary$可以自适应地选择下一个索引$\dbidx_t$，这可能导致$\client$无法找到包含$\dbidx_t$的提示。单服务器协议中的解决方法是通过选择另一个索引进行查询。考虑以下混合：
     
     \begin{itemize}
-        \item \textbf{Hyb 0}: 这是现实世界的执行。在这个混合中，\simulator 的执行方式与 \client 在 \textbf{World 0} 中的完全相同。
+        \item \textbf{Hyb 0}: 这是现实世界的执行。在这个混合中，\simulator 的执行方式与 \client 在 \textbf{世界 0} 中的完全相同。
         \item \textbf{Hyb 1}: 在这个混合中，$\simulator$放弃了$\dbidx_t$并随机选择一个索引$\dbidx_t'$作为其查询索引。这里有两种情况需要讨论：
         \begin{enumerate}
             \item 在 \textbf{Hyb 0} 中，\simulator 找到了$\dbidx_t$的合适提示并正常继续查询。根据引理 \ref{lemma:privacy}，\textbf{Hyb 1} 与 \textbf{Hyb 0} 是不可区分的。
@@ -311,6 +311,10 @@ $$Ok(c)=\left\{\begin{array}{ll}
 % 本文的方案能够抵抗选择失败攻击。不难发现，验证结果不会向Query服务器提供任何信息。如果服务器如实作答，根据正确性，客户端通过验证并接受答案。如果服务器的答案是错误的，根据完整性分析，客户端只有$2^{-\recordsize}$的概率接受这一答案。因此，敌手的优势不超过$2^{-\recordsize}$。由于 $\recordsize \ge \lambda$，这是一个关于$\lambda$的可忽略函数。
 
 \subsection{性能分析}
+\paragraph{双服务器协议}
 在离线阶段，客户端向Hint服务器发送一个大小为$O_\lambda(1)$的PRF密钥。Hint服务器将该密钥扩展为$\hintcount$个Hint密钥，并计算这些Hint。随后，服务器向客户端发送$\hintcount$个校验值和$\sqrt{\dbsize}$个Crumb。校验值的大小为$2\recordsize\hintcount$。$\sqrt{\dbsize}$个面包屑的大小为$\recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$。因此，离线通信的总量为$2\recordsize\hintcount + \recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$，离线计算的开销为$O_\lambda(\hintcount) + O(\recordsize\sqrt{\dbsize}\hintcount)$。
 
 在在线阶段，客户端搜索包含查询索引$\dbidx$的Hint，预期计算开销为$O_\lambda(\sqrt{\dbsize})$。随后的Hint处理，包括展开集合、用Crumb替换索引以及生成新集合，也需要$O_\lambda(\sqrt{\dbsize})$的计算量。客户端向Query服务器发送的查询大小为$\recordsize\sqrt{\dbsize} + O(\sqrt{\dbsize})$，向Hint服务器发送的查询大小为$O(\sqrt{\dbsize})$。每个服务器在$O(\recordsize\sqrt{\dbsize})$时间内计算校验值。Hint服务器回复$\sqrt{\dbsize}$条记录，Query服务器回复2个校验值。然后，客户端在$O(\recordsize\sqrt{\dbsize})$时间内验证答案并刷新Hint。
+
+\paragraph{单服务器协议}
+设$\hintcount = \hintcount_1 + \sqrt{\dbsize}\hintcount_2$。在离线阶段将数据库流式传输到客户端需要$\recordsize\dbsize$的通信量，并且计算量为$O_\lambda(\sqrt{\dbsize}\hintcount) + O(\recordsize\sqrt{\dbsize}\hintcount)$。这与当前最先进的单服务器亚线性PIR方案 \cite{Piano} 一致。在在线阶段，成本与双服务器方案的Query服务器部分类似。然而，客户端可以在$O(\recordsize)$时间内更新Hint，因为它不需要从$\sqrt{\dbsize}$条记录中重新计算Hint。与双服务器方案不同的是，离线阶段必须在$\querycount$次查询后重新运行。

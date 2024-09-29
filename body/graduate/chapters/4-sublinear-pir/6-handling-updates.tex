@@ -22,7 +22,7 @@
 % \begin{figure*}
     \begin{mdframed}
     \centering
-    \textbf{瀑布式更新协议：}
+    \textbf{瀑布式框架：}
         \raggedright
         \paragraph{符号约定：} 记已有亚线性PIR协议为$\Pi$，协议运行于数据库$\db$之上，数据库大小为$\dbsize$。
         \begin{itemize}
@@ -37,11 +37,9 @@
 我们分别讨论如何处理数据库的改、删、增操作。
 
 \subsection{处理数据库修改}
-{给个协议就好}
 处理数据库修改是所有更改中最容易实现的。服务器将需要修改的记录发送给客户端，客户端修改对应Hint的校验值即可。具体地，设修改的记录索引为$\dbidx$，起在数据库中对应块为$\blockidx\coloneqq \lfloor \dbidx/\sqrt{\dbsize}\rfloor$，其值由$\db_\dbidx$修改为$\db_\dbidx'$。对于每个本地Hint $\hint_\hintidx = (\setkey_\hintidx,\sumhint_\hintidx,\randomset_\hintidx,\randomhint_\hintidx)$，客户端检查是否有 $Eval(\setkey_\hintidx, \blockidx) + \sqrt{\dbsize}\cdot \blockidx = \dbidx $。如果为真，则更新$\sumhint_\hintidx \coloneqq \sumhint_\hintidx - \db_{\dbidx} + \db_{\dbidx}', \randomhint_\hintidx \coloneqq \randomhint_\hintidx - Eval(\randomset_\hintidx,\blockidx)\cdot(-\db_{\dbidx} + \db_{\dbidx}')$。
 
 \subsection{处理数据库删除}
-{解释为什么做不了，为什么其他协议也有这个问题}
 数据库删除需要分两种情况讨论：
 \begin{enumerate}
     \item 删除的记录不需要向客户端保密。此时删除仅仅是作为一种释放空间的方式，服务器可以通过将数据修改为某一提前约定的标记值来表示删除。
@@ -51,7 +49,6 @@
 我们注意到这是亚线性PIR中的一个普遍问题。如何解决这一问题会是很有价值的未来研究方向。
 
 \subsection{处理数据库插入}
-{Checklist与分离/合并方案}
-由于我们预先对数据库进行了分块，在插入时我们可以进行倍增操作。具体来说，每次插入都从最小的数据库（大小为$2^0$）开始，如果此数据库已满，就把这个数据库内的全部内容移动至下一个更大的数据库中。我们重新运行每个有所更改的数据库的离线阶段。由倍增的性质，不难证明每次插入的均摊复杂度是对数级别的。
+由于我们预先对数据库进行了分块，在插入时我们可以进行倍增操作。具体来说，每次插入都从最小的数据库（大小为$2^0$）开始，将其中一个空闲位置修改为插入的值。如果此数据库已满，就把这个数据库内的全部内容移动至下一个更大的数据库中，然后再重新尝试插入。我们重新运行每个有所更改的数据库的离线阶段。由倍增的性质，不难证明每次插入的均摊复杂度是对数级别的。
 
 在实践中，我们可以考虑如下更简单的做法：将数据库分为两部分，静态数据与动态数据。于静态数据上运行本文提出的亚线性PIR协议，动态数据上运行任一不需要客户端存储数据库信息的线性PIR协议（如SealPIR\cite{SP:ACLS18}），每过一固定周期或当动态数据因新插入数据达到一定大小时，将静态数据与动态数据合并，重新运行亚线性PIR协议的预处理。
