@@ -8,16 +8,16 @@
         \textbf{基于区块链的PIR协议}
 
         \raggedright
-        初始化阶段：
+        \textbf{初始化阶段：}
         \begin{itemize}
             \item 服务提供商选择将数据库摘要公开，节点向服务提供商请求参与协议。服务提供商根据数据库大小和容灾需要选择合适的纠删码方案，并将数据库分片分发至节点。
             \item 服务提供商选择离散对数困难的群生成元$g$。
         \end{itemize}
-        离线阶段：
+        \textbf{离线阶段：}
         \begin{itemize}
             \item 客户端与服务提供商运行离线阶段PIR协议，获得所需的Hint与Crumb。
         \end{itemize}
-        在线阶段：
+        \textbf{在线阶段：}
         \begin{itemize}
             \item 客户端在区块链发起交易。
             \item 节点发现交易并开始计算PIR查询，将答案上传至区块链。
@@ -28,21 +28,24 @@
     \label{fig:blockchain-scheme}
 \end{figure}
 
-不难注意到，算法流程的核心是保障以下几点：
+算法流程的核心是保障以下几点：
 \begin{enumerate}
     \item 当且仅当节点给出的答案是正确的，客户端通过验证。
     \item 当且仅当通过验证的节点数量超过恢复阈值，客户端接受答案。
     \item 如果节点没有及时给出回复，应判断节点给出了不通过验证的答案。如果客户端没有及时给出回复，应认为客户端放弃了查询。
 \end{enumerate}
 
-这些要求都可以由智能合约实现。我们使用solidity语言编写了相应的逻辑，其核心在于，验证答案这一过程是可以公开进行的。具体地：
+这些要求都可以由智能合约实现。我们使用solidity语言编写了相应的逻辑，其核心在于，验证答案这一过程是可以公开进行的。具体地，协议参与者预先商定一种数据承诺协议，以及一个求解离散对数困难的群$g$：
 \begin{enumerate}
-    \item 记图\ref{fig:single-server}算法中$Eval(\randomset_\hintidx, \blockidx)$的值为$e$，客户端将$e$Commit至交易中。同时，客户端也将$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}$的值上传至合约内。
+    \item 记节\ref{fig:single-server}算法中$Eval(\randomset_\hintidx, \blockidx)$的值为$e$，客户端将$e$承诺至交易中。同时，客户端也将$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}$的值上传至合约内。
     \item 节点提交$\sumanswer,\randomanswer$
-    \item 确定答案后，客户端公开$e$的值，并验证是否有$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}=g^{\randomanswer-e\sumanswer}$
+    \item 客户端公开$e$的值，并验证是否有$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}=g^{\randomanswer-e\sumanswer}$
 \end{enumerate}
 
-这一过程的正确性是显然的。具体地算法代码如下：
+这一过程中最后验证的等式为$$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}=g^{\randomanswer-e\sumanswer}$$
+将其进行一定的化简，可以得到如下形式：
+$$\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-\randomanswer=e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx}-\sumanswer)$$
+这一形式与节\ref{fig:single-server}算法中最后的验证等式是一致的。同时，由于群$g$上离散对数问题的困难性，参与方无法从$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}$中恢复出$\randomhint_\hintidx,\sumhint_\hintidx$的值。智能合约的详细代码如下：
 \begin{lstlisting}[language=Solidity]
     // SPDX-License-Identifier: MIT
     pragma solidity ^0.8.0;
@@ -234,7 +237,5 @@
     }
 \end{lstlisting}
 
-由于区块链公开且不可篡改，恶意的客户端或是服务器行为都会被记录在区块链上。服务提供者与客户端都可以根据信用记录进行筛选，使恶意的节点与客户端无法参与到协议中。
-
 \subsection{节点激励模型}
-上文的协议要求客户端首先将一笔代币预支付于合约中。同时，合约也保证，只要失败的查询个数不超过阈值，正确回答问题的节点就能得到报酬。因此，节点通过回答客户端的请求获益，这激励了节点积极参与这一协议。
+上文的协议要求客户端首先将一笔代币预支付于合约中。同时，合约也保证，只要失败的查询个数不超过阈值，正确回答问题的节点就能得到报酬。因此，节点通过回答客户端的请求获益，而客户端能够在查询失败时获得退款。协议流程保正了客户端获得正确查询结果与节点获得报酬是原子的。

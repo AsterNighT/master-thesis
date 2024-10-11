@@ -115,11 +115,11 @@ Piano~\cite{Piano} 是当前最先进的单服务器亚线性方案。Piano要�
         \includegraphics[width=0.8\linewidth]{figure/cost_8gb.png}
         \caption{8 GiB}
     \end{subfigure}%
-    \caption{单服务器PIR方案在财务成本方面的对比}
+    \caption{单服务器PIR方案在经济成本方面的对比}
     \label{fig:single-server-cost}
 \end{figure*}
 
-\paragraph{财务成本}
+\paragraph{经济成本}
 为了展示本文方案在实际场景中的实用性，我们在表 \ref{fig:single-server-cost} 中提供了本文方案和其他方案的财务成本估算。我们以客户端直接下载并存储数据库为基准。图中的数据以相对于该基准方案的成本比率显示。成本是基于AWS的定价\footnote{每GiB下载费用为0.05美元，每GiB数据存储在EBS gp3上的费用为0.08美元，c7a.2xlarge实例的每小时CPU费用为0.41美元。}，针对之前评估中的2 GiB和8 GiB数据库计算的。我们假设客户端每月运行一定数量的查询，并且至少运行一次完整的离线阶段。由于SimplePIR和VeriSimplePIR的离线计算与客户端无关，因此离线计算成本不包含在内。
 
 从之前的对比中，我们可以看到本文方案的在线上传量略大，但在线下载量却低得多。因此，本文方案在成本方面非常具有竞争力。当客户端每月运行超过$2^{12}$次查询时，本文方案比SimplePIR更具成本效益，并且在查询次数少于$2^{18}$时，本文方案的成本仍然低于直接存储数据库的方案。当数据库规模增大时，本文方案的优势保持到了更大的查询规模。这一结果清楚地表明，本文方案是一种在实际场景中，尤其是在客户端存储资源有限的情况下，提供PIR服务的可行方案。
