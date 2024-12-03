@@ -155,67 +155,76 @@
   organization = {IEEE}
 }
 
-@inproceedings{CK20,
-  author    = {Henry {Corrigan-Gibbs} and
-               Dmitry Kogan},
-  title     = {Private Information Retrieval with Sublinear Online Time},
-  pages     = {44--75},
-  editor    = eurocrypt20ed,
-  booktitle = eurocrypt20name1,
-  volume    = eurocrypt20vol1,
-  address   = eurocrypt20addr,
-  month     = eurocrypt20month,
-  publisher = eurocryptpub,
-  series    = mylncs,
-  year      = 2020,
-  doi       = {10.1007/978-3-030-45721-1_3}
+@article{6772729,
+  author   = {Hamming, R. W.},
+  journal  = {The Bell System Technical Journal},
+  title    = {Error detecting and error correcting codes},
+  year     = {1950},
+  volume   = {29},
+  number   = {2},
+  pages    = {147-160},
+  keywords = {},
+  doi      = {10.1002/j.1538-7305.1950.tb00463.x}
 }
 
-@inproceedings{TreePIR,
-  author    = {Arthur Lazzaretti and
-               Charalampos Papamanthou},
-  title     = {{TreePIR}: Sublinear-Time and Polylog-Bandwidth Private Information Retrieval from {DDH}},
-  pages     = {284--314},
-  editor    = crypto23ed,
-  booktitle = crypto23name2,
-  volume    = crypto23vol2,
-  address   = cryptoaddr,
-  month     = crypto23month,
-  publisher = cryptopub,
-  series    = mylncs,
-  year      = 2023,
-  doi       = {10.1007/978-3-031-38545-2_10}
+@article{1190589,
+  author   = {Mangard, S. and Aigner, M. and Dominikus, S.},
+  journal  = {IEEE Transactions on Computers},
+  title    = {A highly regular and scalable AES hardware architecture},
+  year     = {2003},
+  volume   = {52},
+  number   = {4},
+  pages    = {483-491},
+  keywords = {Hardware;Cryptography;Throughput;Scalability;Web server;Energy consumption;Smart cards;Registers;CMOS process;Very large scale integration},
+  doi      = {10.1109/TC.2003.1190589}
 }
 
-@inproceedings{CHK22,
-  author    = {Henry {Corrigan-Gibbs} and
-               Alexandra Henzinger and
-               Dmitry Kogan},
-  title     = {Single-Server Private Information Retrieval with Sublinear Amortized Time},
-  pages     = {3--33},
-  editor    = eurocrypt22ed,
-  booktitle = eurocrypt22name2,
-  volume    = eurocrypt22vol2,
-  address   = eurocrypt22addr,
-  month     = eurocrypt22month,
-  publisher = eurocryptpub,
-  series    = mylncs,
-  year      = 2022,
-  doi       = {10.1007/978-3-031-07085-3_1}
+@misc{1250456,
+  author    = {National Institute of Standards and Technology (NIST) and Morris J. Dworkin and Elaine Barker and James Nechvatal and James Foti and Lawrence E. Bassham and E. Roback and James Dray Jr.},
+  title     = {Advanced Encryption Standard (AES)},
+  year      = {2001},
+  month     = {2001-11-26 00:11:00},
+  publisher = {Federal Inf. Process. Stds. (NIST FIPS), National Institute of Standards and Technology, Gaithersburg, MD},
+  url       = {https://tsapps.nist.gov/publication/get_pdf.cfm?pub_id=901427},
+  doi       = {https://doi.org/10.6028/NIST.FIPS.197},
+  language  = {en}
 }
 
-@inproceedings{Checklist,
-  author    = {Dmitry Kogan and
-               Henry {Corrigan-Gibbs}},
-  title     = {Private Blocklist Lookups with Checklist},
-  pages     = {875--892},
-  editor    = usenix21ed,
-  booktitle = usenix21name,
-  address   = usenix21addr,
-  month     = usenix21month,
-  publisher = usenixpub,
-  year      = 2021
+@inproceedings{10.1007/3-540-46766-1_35,
+  author    = {Rackoff, Charles
+               and Simon, Daniel R.},
+  editor    = {Feigenbaum, Joan},
+  title     = {Non-Interactive Zero-Knowledge Proof of Knowledge and Chosen Ciphertext Attack},
+  booktitle = {Advances in Cryptology --- CRYPTO '91},
+  year      = {1992},
+  publisher = {Springer Berlin Heidelberg},
+  address   = {Berlin, Heidelberg},
+  pages     = {433--444},
+  abstract  = {The zero-knowledge proof of knowledge, first defined by Fiat, Fiege and Shamir, was used by Galil, Haber and Yung as a means of constructing (out of a trapdoor function) an interactive public-key cryptosystem provably secure against chosen ciphertext attack. We introduce a revised setting which permits the definition of a non-interactive analogue, the non-interactive zero-knowledge proof of knowledge, and show how it may be constructed in that setting from a non-interactive zero-knowledge proof system for N P (of the type introduced by Blum, Feldman and Micali). We give a formalization of chosen ciphertext attack in our model which is stronger than the ``lunchtime attack'' considered by Naor and Yung, and prove a non-interactive public-key cryptosystem based on non-interactive zero-knowledge proof of knowledge to be secure against it.},
+  isbn      = {978-3-540-46766-3}
 }
+
+
+@article{10.1145/263876.263881,
+  author     = {Rizzo, Luigi},
+  title      = {Effective erasure codes for reliable computer communication protocols},
+  year       = {1997},
+  issue_date = {Apr. 1997},
+  publisher  = {Association for Computing Machinery},
+  address    = {New York, NY, USA},
+  volume     = {27},
+  number     = {2},
+  issn       = {0146-4833},
+  url        = {https://doi.org/10.1145/263876.263881},
+  doi        = {10.1145/263876.263881},
+  abstract   = {Reliable communication protocols require that all the intended recipients of a message receive the message intact. Automatic Repeat reQuest (ARQ) techniques are used in unicast protocols, but they do not scale well to multicast protocols with large groups of receivers, since segment losses tend to become uncorrelated thus greatly reducing the effectiveness of retransmissions. In such cases, Forward Error Correction (FEC) techniques can be used, consisting in the transmission of redundant packets (based on error correcting codes) to allow the receivers to recover from independent packet losses.Despite the widespread use of error correcting codes in many fields of information processing, and a general consensus on the usefulness of FEC techniques within some of the Internet protocols, very few actual implementations exist of the latter. This probably derives from the different types of applications, and from concerns related to the complexity of implementing such codes in software. To fill this gap, in this paper we provide a very basic description of erasure codes, describe an implementation of a simple but very flexible erasure code to be used in network protocols, and discuss its performance and possible applications. Our code is based on Vandermonde matrices computed over GF(pr), can be implemented very efficiently on common microprocessors, and is suited to a number of different applications, which are briefly discussed in the paper. An implementation of the erasure code shown in this paper is available from the author, and is able to encode/decode data at speeds up to several MB/s running on a Pentium 133.},
+  journal    = {SIGCOMM Comput. Commun. Rev.},
+  month      = apr,
+  pages      = {24–36},
+  numpages   = {13},
+  keywords   = {FEC, erasure codes, reliable multicast}
+}
+
 @inproceedings{VeriSimplePIR,
   title     = {{VeriSimplePIR}: Verifiability in {SimplePIR} at No Online Cost for Honest Servers},
   author    = {de Castro, Leo and Lee, Keewoo},
@@ -330,4 +339,24 @@
 @www{hyperchain,
     title = {趣链区块链平台Hyperchain-核心产品-趣链科技},
     url = {https://www.hyperchain.cn/products/hyperchain},
+}
+
+@www{gcp,
+    title = {All networking pricing},
+    url = {https://cloud.google.com/vpc/network-pricing}
+}
+
+@www{e164,
+  title = {码号服务推进组},
+  url   = {https://www.opene164.org.cn/index.html}
+}
+
+@www{apple_live_caller_id,
+  title = {Understanding how Live Caller ID Lookup preserves privacy},
+  url   = {https://developer.apple.com/documentation/sms_and_call_reporting/understanding_how_live_caller_id_lookup_preserves_privacy}
+}
+
+@www{apple_parameter_tuning,
+  title = {Parameter Tuning},
+  url   = {https://developer.apple.com/documentation/sms_and_call_reporting/parameter_tuning_for_live_caller_id_lookup}
 }

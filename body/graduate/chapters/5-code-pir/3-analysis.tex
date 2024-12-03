@@ -1,8 +1,15 @@
 \section{协议分析}
-本节对上一节提出的PIR协议进行安全性和性能分析。
+本节对上一节提出的PIR框架进行安全性和性能分析。
 
 \subsection{安全分析}
-对于客户端而言，其相当于进行了$\servercount$次单服务器PIR协议$\Pi$。因此，只要$\Pi$满足隐私性要求，整个协议也满足隐私性。由于我们要求$\Pi$是一个可验证的PIR协议，因此每台服务器给出的答案都是真实的码点或$\bot$。在出错或恶意的服务器不超过$\threshold$时，至少有$\servercount-\threshold$个正确答案。由纠删码的性质可以知道，$Decode$算法必然能恢复出正确的记录。
+\paragraph{正确性}
+框架的正确性可以简单地由PIR协议$\Pi$的正确性与编码协议$\Pi_c$的正确性所保证。
+
+\paragraph{完整性}
+由于我们要求$\Pi$是一个可验证的PIR协议，因此每台服务器提供的答案都是真实的码点或$\bot$。在出错或恶意的服务器不超过$\threshold$个时，至少有$\servercount-\threshold$个正确答案。根据编码的性质，$Decode$算法必然能恢复出正确的记录。
+
+\paragraph{隐私性}
+对于客户端而言，其相当于执行了$\servercount$次单服务器PIR协议$\Pi$。然而，从服务器的联合视角来看，客户端发送的消息是完全相同的。相对于原始协议$\Pi$，服务器并未获得任何额外的信息。因此，只要$\Pi$满足隐私性要求，整个框架也满足隐私性。
 
 \subsection{性能分析}
-由于数据库划分与编码，原数据库$\db$被转化为$\servercount$个$\frac{\dbsize}{\servercount-\threshold}$大小的子数据库。对于每个子数据库，其PIR协议的渐进复杂度是不变的。如果原PIR协议的通信与计算复杂度为$T(\dbsize)$，则每个子数据库对应的复杂度为$T(\frac{\dbsize}{\servercount-\threshold})$，总复杂度为$\servercount \cdot T(\frac{\dbsize}{\servercount-\threshold})$。
+由于数据库的划分和编码，原数据库$\db$被转化为$\servercount$个大小为$\frac{\dbsize}{\servercount-\threshold}$的子数据库。对于每个子数据库，其PIR协议的渐进复杂度是不变的。如果原PIR协议的通信和计算复杂度为$T(\dbsize)$，则每个子数据库对应的复杂度为$T(\frac{\dbsize}{\servercount-\threshold})$，总复杂度为$\servercount \cdot T(\frac{\dbsize}{\servercount-\threshold})$。

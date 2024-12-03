@@ -1,241 +1,76 @@
-\section{解决方案}
-针对黑名单匹配这一问题，本文提出了一套使用区块链节点委托计算的解决方案。在这一方案中，服务提供商使用本文提出于第\ref{sec:optimized-model}节中提出的优化多服务器模型提供服务。具体算法部分，双方采用Reed-solomon编码分片的，基于图\ref{fig:single-server}中算法的PIR协议。
+\section{应用方案}
+为了满足实时查询的需求，服务需要高性能的PIR协议作为基础。而区块链技术则很好地满足了服务对高可用性的需求。针对黑名单匹配的问题，本文提出了一套向服务提供者委托计算的解决方案。在这一方案中，数据库所有者与服务提供者达成协议，将数据库分片置于服务提供者处。服务提供者通过智能合约处理客户端的在线请求，并通过智能合约不可篡改的属性证明其完成了与数据库所有者之间的协议。这一解决方案保护了客户端的隐私，并确保了客户端、服务提供者和数据库所有者三方的利益。该解决方案的基础采用了第\ref{sec:construction}节中介绍的PIR协议，从而实现了高效的查询处理。
 \subsection{协议流程}
-如图\ref{fig:blockchain-scheme}所示：
+
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figure/应用示意图.png}
+    \caption{应用示意图}
+    \label{fig:pir-application-lane}
+\end{figure}
+
+整体应用执行流程如图\ref{fig:pir-application-lane}所示。PIR协议和数据库分片的部分已在第\ref{sec:construction}和第\ref{sec:pir-framework}节中介绍。本节重点关注在线阶段的算法逻辑。算法流程的关键在于确保以下几点：
+\begin{enumerate}
+    \item 只有当服务提供者提供正确答案时，验证通过。
+    \item 只有当通过验证的服务提供者数量超过恢复阈值时，客户端才接受答案。
+    \item 若服务提供者未及时响应，则应判定提供的答案无效。如果客户端未及时响应，则视为客户端接受了答案。
+\end{enumerate}
+
+这些要求都可以通过智能合约来实现。我们使用Solidity语言编写了相关逻辑，其核心在于验证答案可公开进行。具体来说，协议参与方事先商定一种数据承诺协议，以及一个难解离散对数问题的群$\mathcal{G}$及其生成元$g$：
+\begin{enumerate}
+    \item 记节\ref{fig:single-server}算法中$Eval(\randomset_\hintidx, \blockidx)$的值为$e$，客户端将$e$承诺至交易中。同时，客户端还将相应的请求与$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}$的值上传至合约内。
+    \item 服务提供者提交$\sumanswer,\randomanswer$
+    \item 客户端公开$g^e$的值，并验证是否有$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}=g^{\randomanswer-e\sumanswer}$
+\end{enumerate}
+
+这一过程中最后验证的等式为
+$$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}=g^{\randomanswer-e\sumanswer}$$
+对其进行一定的化简，可以得到如下形式：
+$$\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-\randomanswer=e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx}-\sumanswer)$$
+这个形式与节\ref{fig:single-server}中算法的最终验证等式是一致的。由于群$g$上离散对数问题的困难性，参与方无法从$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}$中恢复出$\randomhint_\hintidx$和$\sumhint_\hintidx$的值。智能合约的具体代码请参见附录\ref{appendix:contract}。具体协议如图\ref{fig:blockchain-scheme}所示。
+
 \begin{figure}
     \begin{mdframed}
         \centering
         \textbf{基于区块链的PIR协议}
 
         \raggedright
-        \textbf{初始化阶段：}
-        \begin{itemize}
-            \item 服务提供商选择将数据库摘要公开，节点向服务提供商请求参与协议。服务提供商根据数据库大小和容灾需要选择合适的纠删码方案，并将数据库分片分发至节点。
-            \item 服务提供商选择离散对数困难的群生成元$g$。
-        \end{itemize}
         \textbf{离线阶段：}
         \begin{itemize}
-            \item 客户端与服务提供商运行离线阶段PIR协议，获得所需的Hint与Crumb。
+            \item 数据库所有者选择将数据库摘要在链上公开，服务提供者向数据库所有者请求参与协议。根据数据库大小和容灾需要，数据库所有者选择合适的纠删码方案，并在预处理阶段（参见图\ref{fig:framework-protocol}）中将数据库分片在链下分发至服务提供者。
+            \item 数据库所有者选定离散对数困难的群$\mathcal{G}$及其生成元$g$，并部署相应的智能合约。
+            \item 客户端与数据库所有者在链下运行PIR协议的离线阶段，以获取所需的Hint和Crumb。
         \end{itemize}
         \textbf{在线阶段：}
         \begin{itemize}
-            \item 客户端在区块链发起交易。
-            \item 节点发现交易并开始计算PIR查询，将答案上传至区块链。
-            \item 客户端验证答案的正确性。如果能够从有效的数据中恢复出正确的结果，则客户端接受答案。
+            \item 客户端通过智能合约发起交易，并执行PIR协议的$Query$算法，将承诺值和请求上传至合约，触发交易事件。
+            \item 服务提供者检测到交易并计算查询结果，执行PIR协议的$Answer$算法，将答案上传至智能合约。
+            \item 智能合约验证答案的正确性，若通过解码阈值的验证，则客户端解码并接受答案；若未通过，则客户端拒绝答案并结束协议。
         \end{itemize}
     \end{mdframed}
     \caption{基于区块链的PIR协议}
     \label{fig:blockchain-scheme}
 \end{figure}
 
-算法流程的核心是保障以下几点：
-\begin{enumerate}
-    \item 当且仅当节点给出的答案是正确的，客户端通过验证。
-    \item 当且仅当通过验证的节点数量超过恢复阈值，客户端接受答案。
-    \item 如果节点没有及时给出回复，应判断节点给出了不通过验证的答案。如果客户端没有及时给出回复，应认为客户端放弃了查询。
-\end{enumerate}
+对客户端和服务提供者而言，其交互逻辑与第\ref{sec:pir-framework}节中PIR框架的运行基本一致。唯一的区别在于双方不再直接进行交互，而是通过智能合约进行中转。双方的通信均被记录在智能合约上。正如前文所述，这些通信记录起到了数据库所有者与服务提供者之间的信用证明作用。由于客户端的计算量较小，常见的个人设备都能胜任，因此该方案可以轻松移植至移动设备、浏览器等环境中。
 
-这些要求都可以由智能合约实现。我们使用solidity语言编写了相应的逻辑，其核心在于，验证答案这一过程是可以公开进行的。具体地，协议参与者预先商定一种数据承诺协议，以及一个求解离散对数困难的群$g$：
-\begin{enumerate}
-    \item 记节\ref{fig:single-server}算法中$Eval(\randomset_\hintidx, \blockidx)$的值为$e$，客户端将$e$承诺至交易中。同时，客户端也将$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}$的值上传至合约内。
-    \item 节点提交$\sumanswer,\randomanswer$
-    \item 客户端公开$e$的值，并验证是否有$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}=g^{\randomanswer-e\sumanswer}$
-\end{enumerate}
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figure/浏览器逻辑.png}
+    \caption{网址黑名单查询服务流程}
+    \label{fig:pir-application-browser}
+\end{figure}
 
-这一过程中最后验证的等式为$$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}=g^{\randomanswer-e\sumanswer}$$
-将其进行一定的化简，可以得到如下形式：
-$$\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-\randomanswer=e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx}-\sumanswer)$$
-这一形式与节\ref{fig:single-server}算法中最后的验证等式是一致的。同时，由于群$g$上离散对数问题的困难性，参与方无法从$g^{\randomhint_\hintidx+r\cdot \crumbvalue_{\blockidx, \crumbidx}-e(\sumhint_\hintidx+\crumbvalue_{\blockidx, \crumbidx})}$中恢复出$\randomhint_\hintidx,\sumhint_\hintidx$的值。智能合约的详细代码如下：
-\begin{lstlisting}[language=Solidity]
-    // SPDX-License-Identifier: MIT
-    pragma solidity ^0.8.0;
-    
-    contract CommitmentService {
-        // 状态变量
-        address public client;                 // 客户的地址
-        uint256 public n;                      // 提交的数字和服务提供者的数量
-        uint256 public t;                      // 允许失败的最大数量
-        uint256 public commitEndTime;          // 提交阶段结束的时间
-        uint256 public revealEndTime;          // 客户公开已提交元组的截止时间
-        uint256 public lockedAmount;           // 客户锁定的资金
-        bool public revealed;                  // 客户是否公开了已提交的元组
-    
-        uint256 public g;                      // 群的生成元
-        uint256 public e;                      // 客户公开的e值
-    
-        // 承诺的元组：每个元组包含一个群元素h和一个承诺commit c
-        struct Tuple {
-            uint256 h;      // 群上的元素h
-            bytes32 c;      // 承诺的commit（哈希值）
-        }
-    
-        Tuple[] public tuples;                 // 客户承诺的n个元组
-        address[] public servers;              // n个服务提供者的地址
-    
-        // 提交的ai, bi
-        struct Submission {
-            uint256 ai;
-            uint256 bi;
-            bool submitted;
-        }
-    
-        mapping(address => Submission) public submissions; // 每个服务提供者提交的ai, bi
-        uint256 public submissionCount;                    // 已提交的服务提供者数量
-    
-        // 事件
-        event Commit(address indexed client, address[] servers, uint256 amountLocked);
-        event Submit(address indexed server, uint256 ai, uint256 bi);
-        event Reveal(address indexed client, uint256 e);
-        event DistributeFunds(uint256 successCount, uint256 amountPerWinner);
-        event RefundClient(uint256 amount);
-        event TimeoutDistribute(uint256 amountPerServer);
-        event RevealFailed(address indexed client, string message);
-    
-        // 修饰符
-        modifier onlyClient() {
-            require(msg.sender == client, unicode"不是客户");
-            _;
-        }
-    
-        modifier onlyDuringCommitPhase() {
-            require(block.timestamp <= commitEndTime, unicode"提交阶段已结束");
-            _;
-        }
-    
-        modifier onlyDuringRevealPhase() {
-            require(block.timestamp > commitEndTime && block.timestamp <= revealEndTime, unicode"不在公开阶段");
-            _;
-        }
-    
-        modifier afterRevealPhase() {
-            require(block.timestamp > revealEndTime, unicode"公开阶段尚未结束");
-            _;
-        }
-    
-        constructor(
-            uint256 _n,
-            uint256 _t,
-            uint256 _commitDuration,
-            uint256 _revealDuration,
-            uint256 _g,                 // 群的生成元g
-            Tuple[] memory _tuples,     // Memory数组，含n个元组
-            address[] memory _servers
-        ) payable {
-            require(_n == _tuples.length && _n == _servers.length, unicode"元组或服务提供者数量无效");
-            require(msg.value > 0, unicode"必须锁定一些资金");
-    
-            client = msg.sender;
-            n = _n;
-            t = _t;
-            g = _g;  // 设置群的生成元g
-            commitEndTime = block.timestamp + _commitDuration;
-            revealEndTime = commitEndTime + _revealDuration;
-            
-            // 将memory中的_tuples逐个复制到storage中的tuples
-            for (uint256 i = 0; i < _tuples.length; i++) {
-                tuples.push(Tuple({
-                    h: _tuples[i].h,
-                    c: _tuples[i].c
-                }));
-            }
-    
-            servers = _servers;
-            lockedAmount = msg.value;
-    
-            emit Commit(client, servers, msg.value);
-        }
-    
-        // 服务提供者提交他们的ai和bi
-        function submit(uint256 _ai, uint256 _bi) external {
-            require(block.timestamp <= commitEndTime, unicode"提交阶段已结束");
-            require(submissions[msg.sender].submitted == false, unicode"已提交过");
-    
-            // 验证提交者是否是有效服务提供者
-            bool isValidServer = false;
-            for (uint256 i = 0; i < servers.length; i++) {
-                if (servers[i] == msg.sender) {
-                    isValidServer = true;
-                    break;
-                }
-            }
-            require(isValidServer, unicode"不是有效服务提供者");
-    
-            submissions[msg.sender] = Submission(_ai, _bi, true);
-            submissionCount++;
-    
-            emit Submit(msg.sender, _ai, _bi);
-        }
-    
-        // 客户公开之前承诺的e值
-        function reveal(uint256 _e) external onlyClient onlyDuringRevealPhase {
-            e = _e;
-            revealed = true;
-    
-            emit Reveal(client, _e);
-    
-            // 评估提交情况并进行资金分配
-            _evaluateSubmissions();
-        }
-    
-        // 评估所有服务提供者的提交，并决定资金分配或退款
-        function _evaluateSubmissions() internal {
-            uint256 successCount = 0;
-            uint256 failCount = 0;
-    
-            for (uint256 i = 0; i < n; i++) {
-                address server = servers[i];
-                Submission memory submission = submissions[server];
-                Tuple memory tuple = tuples[i];
-    
-                // 如果服务提供者未提交，默认提交(0, 0)
-                if (!submission.submitted) {
-                    submission = Submission(0, 0, true);
-                }
-    
-                // 验证g^(b_i - e * a_i) 是否等于 h_i
-                if (_powMod(g, submission.bi - e * submission.ai) == tuple.h) {
-                    successCount++;
-                } else {
-                    failCount++;
-                }
-            }
-    
-            // 分配资金或退款
-            if (failCount <= t) {
-                uint256 amountPerWinner = lockedAmount / successCount;
-                for (uint256 i = 0; i < n; i++) {
-                    address server = servers[i];
-                    Submission memory submission = submissions[server];
-                    Tuple memory tuple = tuples[i];
-                    if (_powMod(g, submission.bi - e * submission.ai) == tuple.h) {
-                        payable(server).transfer(amountPerWinner);
-                    }
-                }
-                emit DistributeFunds(successCount, amountPerWinner);
-            } else {
-                payable(client).transfer(lockedAmount); // 如果失败数量超过阈值，退款给客户
-                emit RefundClient(lockedAmount);
-            }
-        }
-    
-        // 用于计算群的指数运算（g^x mod p）
-        function _powMod(uint256 base, uint256 exponent) internal pure returns (uint256) {
-            return base ** exponent;  // 在此处假设使用一个安全的大整数库或实现
-        }
-    
-        // 如果客户未能按时公开，平分资金给所有服务提供者
-        function distributeIfNotRevealed() external afterRevealPhase {
-            require(!revealed, unicode"已公开");
-    
-            uint256 amountPerServer = lockedAmount / n;
-            for (uint256 i = 0; i < n; i++) {
-                payable(servers[i]).transfer(amountPerServer);
-            }
-    
-            emit TimeoutDistribute(amountPerServer);
-        }
-    }
-\end{lstlisting}
 
-\subsection{节点激励模型}
-上文的协议要求客户端首先将一笔代币预支付于合约中。同时，合约也保证，只要失败的查询个数不超过阈值，正确回答问题的节点就能得到报酬。因此，节点通过回答客户端的请求获益，而客户端能够在查询失败时获得退款。协议流程保正了客户端获得正确查询结果与节点获得报酬是原子的。
+\begin{figure}
+    \centering
+    \includegraphics[width=0.8\textwidth]{figure/blocking_requests.png}
+    \caption{被阻止的网络请求}
+    \label{fig:blocking-requests}
+\end{figure}
+实践中，我们将这一查询服务集成至浏览器内，为用户提供诈骗网站预警服务。如图\ref{fig:pir-application-browser}所示，服务以插件形式拦截浏览器请求，将相应的域名提交至智能合约查询。如图\ref{fig:blocking-requests}所示，如果发现访问的域名在黑名单中，插件将阻止相应的网络请求。这一方案兼顾了用户隐私保护与诈骗网址拦截的需求。
+
+
+
+\subsection{将关键字PIR转化为标准PIR}
+在黑名单查询中，客户端通常要查询的不是由稠密索引定位的记录，而是离散的关键词。因此，协议需要将关键词查询转换为索引查询。相关研究已经相当成熟，例如Checklist\cite{USENIX:KogCor21}采用一种基于哈希的方法，将关键词映射为哈希值。该方法首先查询本地映射表，检查是否存在关键词对应的哈希前缀，然后通过PIR查询哈希前缀以获取完整哈希来验证是否命中黑名单。这种方式非常适用于黑名单查询场景：在与黑名单查询相关的服务中，大多数查询结果是阴性的，只有少数查询项属于黑名单。由于采用了前缀-完整哈希的两级查询方式，许多查询可以在客户端本地直接被排除，从而节省大量在线计算和通信成本。本文在本节中直接采用了这种方法，不再深入讨论。

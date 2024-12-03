@@ -1,30 +1,30 @@
-\section{一种新的亚线性PIR构造方案}
+\section{一种新的亚线性PIR协议}
 \label{sec:construction}
-在本小节中，我们提出了一种新的设计，构建了一种高效的两服务器PIR方案。该方案没有使用虚设查询，同时保持了亚线性的查询效率。
+在本小节中，我们提出一些新的设计，构建了一种高效的两服务器PIR协议。该协议没有使用“虚设查询”，同时保持了亚线性的查询效率。
 我们尝试通过三种优化技术来解决前文提到的问题：
 \begin{enumerate}
     \item 使用“划分与采样”技术实现高效的隶属测试
     \item 使用伪随机函数压缩集合以提高空间和通信效率
-    \item 使用一种新方式隐藏查询索引
+    \item 使用额外Hint隐藏查询索引
 \end{enumerate}
 以下是这些技术的详细说明：
 \subsection{对数据库进行划分}
 
-在前文的协议中，每个集合$\setkey_j, j\in[\hintcount]$的索引都是随机生成的。受现有文献 \cite{Piano, C:LazPap23} 的启发，我们将数据库分成$\sqrt{\dbsize}$个块，每个块包含$\sqrt{\dbsize}$条记录。在此基础上，我们通过以下方式生成集合：
+在前文的协议中，每个集合中的索引都是随机生成的。受现有文献 \cite{Piano, C:LazPap23} 的启发，我们将数据库分成$\sqrt{\dbsize}$个块，每个块包含$\sqrt{\dbsize}$条记录。在此基础上，我们通过以下方式生成集合：
 为每个块 $j$ 随机生成一个偏移量$x_j \leftarrow [\sqrt{\dbsize}]$，由偏移量计算出集合 $S=\{x_j+j\cdot \sqrt{\dbsize} \mid j \in [\sqrt{\dbsize}]\}$。
 
-这种方法能够高效地进行隶属测试。为了确定查询的索引$\dbidx$是隶属于集合$S$中，客户端计算集合$S$中第$\lfloor \dbidx/\sqrt{\dbsize}\rfloor$项，并检查它是否等于$\dbidx-\sqrt{\dbsize}\cdot\lfloor \dbidx/\sqrt{\dbsize}\rfloor$。这种取集合中“第x项”的操作要求集合必须保持\textbf{有序}，以便确定一个偏移量属于哪个块。为了简化表示，我们假设集合可以像向量一样进行排序和索引。
+在这样的划分中，每个索引在集合中的位置都是固定的，能够高效地进行隶属测试。为了确定查询的索引$\dbidx$是否属于集合$S$，客户端计算集合$S$中第$\lfloor \dbidx/\sqrt{\dbsize}\rfloor$项，并检查它是否等于$\dbidx-\sqrt{\dbsize}\cdot\lfloor \dbidx/\sqrt{\dbsize}\rfloor$。这种取集合中“第x项”的操作要求集合必须保持\textbf{有序}，以便确定一个偏移量属于哪个块。实践中很容易保证这一点。为了简化表示，我们假设集合可以像向量一样进行排序和索引。
 
-在这种方案中，每个集合不再是完全随机的。每个集合一定由每个块中各一个元素组成。一个集合既不可能包含一个块中的两个元素，也不可能不包含一个块中的任何一个元素。这种结构使得隶属测试变得很简单，但也会带来一定的问题，我们将在 \ref{sec:problem-of-dividing} 节中讨论。
+在这种方案中，一个集合不再是完全随机的。每个集合一定由每个块中各一个元素组成。一个集合既不可能包含一个块中的两个元素，也不可能不包含一个块中的任何一个元素。这种结构会带来一定隐私的问题，我们将在 \ref{sec:problem-of-dividing} 节中讨论。
 
 
 \subsection{优化存储方案}
-先前的工作~\cite{EC:CorKog20, C:LazPap23} 选择使用可穿孔的伪随机函数（Puncturable Pseudorandom Function）来压缩集合，减少通信成本。然而在实践中，可穿孔伪随机函数这一原语计算集合的效率比较低。本文方案选择了普通的伪随机函数。具体来说，指定一个由密钥$\setkey$参数化的伪随机函数族，即$f_{\setkey}: [\sqrt{\dbsize}] \to [\sqrt{\dbsize}]$，我们可以使用一个长度为 $\lambda$ 的密钥$\setkey$表示一个集合 $S$：
+先前的工作\cite{EC:CorKog20, C:LazPap23} 选择使用可穿孔的伪随机函数（Puncturable Pseudorandom Function）来压缩集合，减少通信成本。然而在实践中，可穿孔伪随机函数这一原语计算效率比较低。本文选择了普通的伪随机函数。具体来说，指定一个由密钥$\setkey$参数化的伪随机函数族，即$f_{\setkey}: [\sqrt{\dbsize}] \to [\sqrt{\dbsize}]$，我们可以使用一个长度为 $\lambda$ 的密钥$\setkey$表示一个集合 $S$：
 $$S = \{f_{\setkey}(j) + j \cdot \sqrt{\dbsize} \mid j \in [\sqrt{\dbsize}]\}$$
-由此，隶属测试可以简单地表示为：
+这一集合容易保持我们之前提出的有序要求，按照$j$从小到大的顺序排列即可。由此，隶属测试可以简单地表示为：
 $$f_{\setkey}(\lfloor i/\sqrt{\dbsize}\rfloor) = i - \sqrt{\dbsize}\cdot\lfloor i/\sqrt{\dbsize}\rfloor$$
 
-这一方案还包括一个额外的偏移量 $\shift$。该偏移量对集合中的每个元素进行了一次置换（这一技术也在文献 \cite{EC:CorKog20, C:LazPap23} 中使用）
+每个集合还包括一个额外的偏移量 $\shift$。该偏移量对集合中的每个元素进行了一次置换（这一技术也在文献 \cite{EC:CorKog20, C:LazPap23} 中使用）
 $$S = \{(f_{\setkey}(j)\oplus \shift) + j \cdot \sqrt{\dbsize} \mid j \in [\sqrt{\dbsize}]\}$$
 有了这一偏移量之后，我们可以在 $O_\lambda(1)$ 时间内，以确定性的方式生成包含给定索引 $\dbidx$ 的集合。具体做法如下：先生成一个密钥$\setkey$，将偏移量设置为$\shift \coloneqq f_{\setkey}(\lfloor \dbidx/\sqrt{\dbsize}\rfloor) \oplus (i - \sqrt{\dbsize}\cdot\lfloor i/\sqrt{\dbsize}\rfloor)$。如果没有特定索引需要包含，则偏移量可以从$[\sqrt{\dbsize}]$中随机生成。
 
@@ -32,11 +32,11 @@ $$S = \{(f_{\setkey}(j)\oplus \shift) + j \cdot \sqrt{\dbsize} \mid j \in [\sqrt
 
 为了符号简洁考虑，我们将把密钥 $\setkey$ 展开为集合 $S$ 的过程记作 $S = Expand(\setkey)$。
 
-放弃可穿孔的伪随机函数带来了显著性能提升。但由于失去了可穿孔的性质，从集合中删除元素之后，集合无法使用短密钥表示。此时，我们要求协议的参与方通过非压缩的方式，直接传输集合的每个元素。客户端在离线时以 $O_\lambda(1)$ 大小保留并传输密钥，在线时以$O(\sqrt{\dbsize})$的通信量发送非压缩集合。
+放弃可穿孔的伪随机函数带来了显著性能提升。但由于失去了可穿孔的性质，从集合中删除元素之后，集合无法使用短密钥表示。此时，我们要求协议的参与方通过非压缩的方式，直接传输集合的每个元素。具体到协议中，客户端在离线时以 $O_\lambda(1)$ 大小传输并存储密钥，在线时以$O(\sqrt{\dbsize})$的通信量发送非压缩集合。
 
 \subsection{优化查询方案}
 \label{sec:problem-of-dividing}
-对数据库进行划分提高了隶属测试的效率。然而，它也带来了一个新的问题：由于每个块中固定有且仅有一个元素，从删去元素的位置可以推断出删去的元素落在哪个块中。对应到PIR的场景中，服务器可以知道客户端想要查询的索引落在哪个块里，这不符合隐私性的要求。为了解决这一问题，我们提出一种额外的Hint信息，称为Crumb。一个 Crumb $\crumb=(\crumbvalue, \crumboffset)$ 由一条记录的值 $\crumbvalue$ 及其在块中的偏移量 $\crumboffset$ 组成。离线阶段，客户端在每个块中获取一个随机的Crumb，共计 $\sqrt{\dbsize}$ 个。在现阶段，客户端用 Crumb 来“掩盖”被删去的元素。
+对数据库进行划分提高了隶属测试的效率。然而，它也带来了一个新的问题：由于每个块中固定有且仅有一个元素，从删去元素的位置可以推断出删去的元素落在哪个块中。对应到PIR的场景中，服务器可以知道客户端想要查询的索引落在哪个块里，这不符合隐私性的要求。为了解决这一问题，我们提出一种额外的Hint信息，称为Crumb。Crumb记作$\crumb=(\crumbvalue, \crumboffset)$，由一条记录的值 $\crumbvalue$ 及其在块中的偏移量 $\crumboffset$ 组成。离线阶段，客户端在每个块中获取一个随机的Crumb，共计 $\sqrt{\dbsize}$ 个；在线阶段，客户端用 Crumb 来“掩盖”被删去的元素。
 
 \begin{figure}
     \begin{subfigure}{0.5\textwidth}
@@ -54,25 +54,25 @@ $$S = \{(f_{\setkey}(j)\oplus \shift) + j \cdot \sqrt{\dbsize} \mid j \in [\sqrt
     \label{fig:query}
 \end{figure}
 
-具体来说，当客户端查询记录 $\db_\dbidx$ 时，它首先找到一个包含 $\dbidx$ 的集合 $S$。在从集合中找到 $\dbidx$ 后（由于集合划分的性质，$\dbidx$应该落在块 $\blockidx = \lfloor \dbidx/\sqrt{\dbsize} \rfloor$ 中），它会在块 $\blockidx$ 中找到一个 Crumb $\crumb=(\crumbvalue, \crumboffset)$，并将$S$中第 $\blockidx$ 块对应的偏移替换为 $\crumboffset$ 。这个过程如图 \ref{fig:query} 所示。数据库包含$\dbsize=16$条记录，并被划分为$\sqrt{\dbsize}=4$个区块。 \hyperref[fig:query-a]{a)} $Hint$包含每个块中的一个元素（图中标记为红色）。客户端希望查询记录$\dbidx=9$，该记录位于第三个块。该索引从集合中移除（在第二列中显示），第三个块中的一个Crumb被添加了到集合中（第三列和第四列标记为蓝色）。 \hyperref[fig:query-b]{b)} Query服务器以集合的校验值作为响应。客户端生成一个新的Hint集合以更新Hint和Crumb。Hint服务器以单条记录作为响应。为展示清晰起见，索引在此处以实际值表示。在真实的协议中索引在块中以偏移量表示。
+具体来说，当客户端查询记录 $\db_\dbidx$ 时，它首先找到一个包含 $\dbidx$ 的集合 $S$。在从集合中找到 $\dbidx$ 后（由于集合划分的性质，$\dbidx$应该落在块 $\blockidx = \lfloor \dbidx/\sqrt{\dbsize} \rfloor$ 中），它会在块 $\blockidx$ 中找到一个 Crumb $\crumb=(\crumbvalue, \crumboffset)$，并将$S$中第 $\blockidx$ 块对应的偏移替换为 $\crumboffset$ 。这个过程如图 \ref{fig:query} 所示。数据库包含$\dbsize=16$条记录，并被划分为$\sqrt{\dbsize}=4$个区块。 \hyperref[fig:query-a]{a)} $Hint$包含每个块中的一个元素（图中标记为红色）。客户端希望查询记录$\dbidx=9$，该记录位于第三个块。该索引从集合中移除（在第二列中显示），第三个块中的一个Crumb被添加了到集合中（第三列和第四列标记为蓝色）。 \hyperref[fig:query-b]{b)} Query服务器以集合的校验值作为响应。客户端生成一个新的Hint集合以更新Hint和Crumb。Hint服务器以各条记录的值作为响应。为展示清晰起见，索引在此处为实际值。在真实的协议中索引以偏移量表示。
 
-Crumb不会影响客户端计算答案。每个Crumb仅包含一条已知的记录，因此可以从答案中去除Crumb的值。假设$\answer$是来自服务器的答案，$\crumbvalue$是所用Crumb的值，答案可以由客户端计算为$\answer \coloneqq \answer - \crumbvalue$。最后，客户端可以按照原本协议中的方式利用$\answer$重构记录$\db_\dbidx$。
+Crumb不会影响客户端计算答案。Crumb对应的记录是已知的，因此可以从答案中去除Crumb的值。假设$\answer$是来自服务器的答案，$\crumbvalue$是所用Crumb的值，客户端可以计算$\answer \coloneqq \answer - \crumbvalue$。之后，客户端可以按照原本协议中的方式利用$\answer$重构记录$\db_\dbidx$。
 
-Crumb掩盖了客户端想要查询的位置。加入Crumb之后，客户端发送给服务器的集合在每个块中都包含一个随机元素，与查询的索引$\dbidx$完全无关。我们的构造保持了亚线性效率：在离线阶段，客户端接收到大小为$\recordsize\hintcount$的Hint，这些信息由服务器在$O_\lambda(\recordsize\sqrt{\dbsize}\hintcount)$时间内计算。假设$\hintcount\coloneqq \Theta_\lambda(\sqrt{\dbsize})$，当这一计算均摊在$\querycount\coloneqq\Theta_\lambda(\sqrt{\dbsize})$次在线查询上时，每次查询的通信开销为$O(\recordsize\sqrt{\dbsize})$，计算开销为$O_\lambda(\recordsize\sqrt{\dbsize})$。
+Crumb掩盖了客户端想要查询的位置。加入Crumb之后，客户端发送给服务器的集合在每个块中都包含一个随机元素，与查询的索引$\dbidx$完全无关。我们的协议保持了亚线性效率：在离线阶段，客户端接收到大小为$\recordsize\hintcount$的Hint，这些信息由服务器在$O_\lambda(\recordsize\sqrt{\dbsize}\hintcount)$时间内计算。假设$\hintcount\coloneqq \Theta_\lambda(\sqrt{\dbsize})$，当这一计算均摊在$\querycount\coloneqq\Theta_\lambda(\sqrt{\dbsize})$次在线查询上时，每次查询的通信开销为$O(\recordsize\sqrt{\dbsize})$，计算开销为$O_\lambda(\recordsize\sqrt{\dbsize})$。
 
 \subsection{Hint的获取与更新}
-Hint的获取与更新也是离线-在线PIR方案中的重要环节。我们在设计方案时必须考虑到几个要点：
-\begin{itemize}
-    \item 每条记录都需要至少在某一个Hint集合内，否则，在线阶段无法查询该记录。
-    \item 方案必须支持大量的在线查询，以将昂贵的离线成本分摊到这些在线查询上。
-    \item 客户端不能重复使用某一个Hint。否则服务器可以通过比较不同查询中的Hint获得关于查询索引的信息。因此，Hint在使用后必须被丢弃。
-\end{itemize}
+Hint的获取与更新也是离线-在线PIR协议中的重要环节。我们在设计协议时必须考虑到几个要点：
+\begin{enumerate}
+    \item 每条记录都需要至少在一个Hint集合内，否则，在线阶段无法查询该记录。
+    \item 协议必须支持大量的在线查询，以分摊昂贵的离线成本。
+    \item 客户端不能重复使用某一个Hint，否则服务器可以通过比较不同查询中的Hint获得关于查询索引的信息，Hint在使用后必须丢弃。
+\end{enumerate}
 
 离线阶段的Hint和Crumb的获取并不复杂。鉴于服务器$\hintserver$是半诚实的，所有Hint都可以从客户端提供的一个PRF密钥中生成，服务器计算相应的校验值后发送给客户端。Crumb也可以通过相同的方式获取。
 
-在线阶段的Hint和Crumb更新则需要更复杂的交互。与查询类似，我们希望使用Crumb来掩盖$\dbidx$。然而，Crumb是从$\hintserver$获取的，不能用于保护向$\hintserver$发送的请求。否则，$\hintserver$可以比较查询和Crumb，得知哪个块被Crumb替换了。
+在线阶段的Hint和Crumb更新则需要复杂的交互。与查询类似，我们希望使用Crumb来掩盖$\dbidx$。然而，Crumb是从$\hintserver$获取的，不能用于保护向$\hintserver$发送的请求。否则，$\hintserver$可以比较查询和Crumb，得知哪个块被Crumb替换了。
 
-为了解决这一矛盾，我们采用一种不同于查询的方案来更新Hint。客户端仍然生成一个包含查询索引$\dbidx$的新集合$S'$，但是选择一个随机的索引$j$来替换块$\blockidx$中的$\dbidx$。此时，如果$\hintserver$仅以单个校验值响应查询，客户端将无法获知$\db_{j}$是什么，也就没有办法获得原集合$S'$对应的校验值。所以，我们要求$\hintserver$将收到的查询涉及到的 $\sqrt{\dbsize}$ 条记录全部发送给客户端。客户端则通过这$\sqrt{\dbsize}$条记录与之前查询得到的$\db_\dbidx$组合出一个新Hint，并使用$\db_{j}$来更新用掉的Crumb。这种方案能够支持多项式数量的查询，与最先进的协议 \cite{C:LazPap23} 一致。完整的协议如下：
+为了解决这一矛盾，我们采用一种与查询不同的方案来更新Hint。客户端仍然生成一个包含查询索引$\dbidx$的新集合$S'$，但是选择一个随机的索引$j$来替换块$\blockidx$中的$\dbidx$。此时，如果$\hintserver$仅以单个校验值响应查询，由于客户端不知道$\db_{j}$的值，也就没有办法获得原集合$S'$对应的校验值。所以，我们要求$\hintserver$将收到的查询涉及到的 $\sqrt{\dbsize}$ 条记录全部发送给客户端。客户端则通过这$\sqrt{\dbsize}$条记录与之前查询得到的$\db_\dbidx$组合出一个新Hint，并使用$\db_{j}$来更新用掉的Crumb。这种方案能够支持多项式数量的查询，与目前最先进的协议 \cite{C:LazPap23} 一致。完整的协议如下：
 
 % \begin{algorithm}
     \begin{mdframed}
@@ -80,11 +80,11 @@ Hint的获取与更新也是离线-在线PIR方案中的重要环节。我们在
         \textbf{两服务器协议}
 
         \raggedright
-        \paragraph{符号约定:} 协议包含一个客户端 $\client$，一台Query服务器 $\queryserver$ 与一台Hint服务器 $\hintserver$。单个Hint由元祖：$\hint=(\setkey,\sumhint)$构成。单个Crumb包含了一个偏移量和一条记录值 $\crumb=(\crumboffset,\crumbvalue)$。$fk_{key}:\{0,1\}^\lambda \to \{0,1\}^\lambda$ 是一个能将单一PRF密钥映射为多个PRF密钥的PRF函数， $f_{\setkey}: [\sqrt{\dbsize}]\to [\sqrt{\dbsize}]$ 是一个将块序号转化为偏移量的PRF，  $Eval(\setkey,\dbidx) \coloneqq f_{\setkey}(\dbidx)\oplus \shift + \dbidx\cdot\sqrt{\dbsize}$ 与 $Expand$ 密钥 $\setkey$ 标识计算密钥对应的集合内元素 $\{Eval(sk,j) \mid j\in[\sqrt{\dbsize}]\}$. 假设 $\dbidx$ 是需要查询的索引。 在离线阶段，总共生成 $\hintcount$ 个 Hint.
+        \paragraph{符号约定:} 协议包含一个客户端 $\client$，一台Query服务器 $\queryserver$ 与一台Hint服务器 $\hintserver$。单个Hint由元祖：$\hint=(\setkey,\sumhint)$构成。单个Crumb包含了一个偏移量和一条记录值 $\crumb=(\crumboffset,\crumbvalue)$。$fk_{key}:\{0,1\}^\lambda \to \{0,1\}^\lambda$ 是一个能将单一PRF密钥映射为多个PRF密钥的PRF函数， $f_{\setkey}: [\sqrt{\dbsize}]\to [\sqrt{\dbsize}]$ 是一个将块序号转化为偏移量的PRF，  $Eval(\setkey,\dbidx) = f_{\setkey}(\dbidx)\oplus \shift + \dbidx\cdot\sqrt{\dbsize}$，$Expand$ 密钥 $\setkey$ 表示计算密钥对应的集合内元素 $\{Eval(sk,j) \mid j\in[\sqrt{\dbsize}]\}$。假设 $\dbidx$ 是需要查询的索引。在离线阶段，总共生成 $\hintcount$ 个 Hint。
 
         \paragraph{离线阶段：}
         \begin{itemize}
-            \item \textbf{Setup:} $\client$ 生成一个PRF密钥 $mk\in\{0,1\}^\lambda$，将本地的Hint存储初始化为 $\hint_j\coloneqq(fk_{mk}(j),0), j\in [\hintcount]$，Crumb存储初始化为 $\crumb_j\coloneqq (\bot,\bot), j\in [\sqrt{\dbsize}]$。 $\client$ 将 $mk$ 发送给 $\hintserver$.
+            \item \textbf{Setup:} $\client$ 生成一个PRF密钥 $mk\in\{0,1\}^\lambda$，将本地的Hint存储初始化为 $\hint_j\coloneqq(fk_{mk}(j),0), j\in [\hintcount]$，Crumb存储初始化为 $\crumb_j\coloneqq (\bot,\bot), j\in [\sqrt{\dbsize}]$。 $\client$ 将 $mk$ 发送给 $\hintserver$。
             \item \textbf{Hint:}
                   \begin{itemize}
                       \item $\hintserver$ 将 $mk$ 展开为PRF密钥 $\setkey_j=fk_{mk}(j), j\in[\hintcount]$ 。它将这些密钥进一步$Expand$为集合 $S_j, j\in[\hintcount]$。
@@ -96,15 +96,15 @@ Hint的获取与更新也是离线-在线PIR方案中的重要环节。我们在
         \begin{itemize}
             \item \textbf{Query ($\queryserver$):}
                   \begin{itemize}
-                      \item 记 $\dbidx$ 所在的块为 $\blockidx\coloneqq \lfloor \dbidx/\sqrt{\dbsize}\rfloor$。 $\client$ 在存储中找到一个Hint $\hint_\hintidx = (\setkey_\hintidx,\sumhint_\hintidx)$，满足条件 $f_{\setkey_\hintidx}(\blockidx) = \dbidx-\sqrt{\dbsize}\cdot \blockidx$。如果没有这样的Hint，$\client$ 终止查询并输出 $\bot$.
-                      \item $\client$ 将 $\setkey_\hintidx$ $Expand$ 为集合 $S$。$\client$ 找到 $\blockidx$ 的 Crumb $\crumb_\blockidx=(\crumboffset_\blockidx, \crumbvalue_\blockidx)$，将 $S[\blockidx]$ 替换为Crumb偏移量 $\crumboffset_\blockidx$。  $\client$ 将 $S$  发送给 $\queryserver$.
+                      \item 记 $\dbidx$ 所在的块为 $\blockidx\coloneqq \lfloor \dbidx/\sqrt{\dbsize}\rfloor$。 $\client$ 在存储中找到一个Hint $\hint_\hintidx = (\setkey_\hintidx,\sumhint_\hintidx)$，满足条件 $f_{\setkey_\hintidx}(\blockidx) = \dbidx-\sqrt{\dbsize}\cdot \blockidx$。如果没有这样的Hint，$\client$ 终止查询并输出 $\bot$。
+                      \item $\client$ 将 $\setkey_\hintidx$ $Expand$ 为集合 $S$。$\client$ 找到 $\blockidx$ 的 Crumb $\crumb_\blockidx=(\crumboffset_\blockidx, \crumbvalue_\blockidx)$，将 $S[\blockidx]$ 替换为Crumb偏移量 $\crumboffset_\blockidx$。$\client$ 将 $S$  发送给 $\queryserver$。
                   \end{itemize}
-            \item \textbf{Answer ($\queryserver$):} $\queryserver$ 计算校验值 $\sumanswer\coloneqq \sum_{k\in [\sqrt{\dbsize}]}\db_{S[k]}$ 。$\queryserver$ 将 $\sumanswer$  发送给 $\client$.
+            \item \textbf{Answer ($\queryserver$):} $\queryserver$ 计算校验值 $\sumanswer\coloneqq \sum_{k\in [\sqrt{\dbsize}]}\db_{S[k]}$ 。$\queryserver$ 将 $\sumanswer$ 发送给 $\client$。
             \item \textbf{Reconstruct:} $\client$ 重构出记录 $\db_\dbidx \coloneqq  \sumhint_\hintidx-(\sumanswer-\crumbvalue_\blockidx)$。  $\client$ 输出 $\db_\dbidx$。
             \item \textbf{Query ($\hintserver$):}
                   \begin{itemize}
-                      \item $\client$ 生成PRF密钥 $\setkey'$ 使得 $f_{\setkey'}(\blockidx) = \dbidx-\sqrt{\dbsize}\cdot \blockidx$。 .
-                      \item $\client$ 将 $\setkey'$ $Expand$ 为集合 $S'$。$\client$ 将 $S'[\blockidx]$ 替换为随机偏移 $\crumboffset' \leftarrow [\sqrt{\dbsize}]$. $\client$ 将 $S'$ 发送给 $\hintserver$.
+                      \item $\client$ 生成PRF密钥 $\setkey'$ 使得 $f_{\setkey'}(\blockidx) = \dbidx-\sqrt{\dbsize}\cdot \blockidx$。
+                      \item $\client$ 将 $\setkey'$ $Expand$ 为集合 $S'$。$\client$ 将 $S'[\blockidx]$ 替换为随机偏移 $\crumboffset' \leftarrow [\sqrt{\dbsize}]$。$\client$ 将 $S'$ 发送给 $\hintserver$。
                   \end{itemize}
             \item \textbf{Answer ($\hintserver$):} $\hintserver$ 直接将 $\sqrt{\dbsize}$ 条记录 $\db_{S'[j]}, j\in [\sqrt{\dbsize}]$ 发送给 $\client$。
             \item \textbf{Refresh:} $\client$ 将Crumb更新为 $\crumb_\blockidx \coloneqq  (\crumboffset', \db_{S'[\blockidx]})$，将Hint更新为 $\hint_\hintidx \coloneqq  (\setkey',\db_\dbidx + \sum_{k\in [\sqrt{\dbsize}],k\neq \blockidx}\db_{S'[k]}, )$
